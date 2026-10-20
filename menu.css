@@ -1,0 +1,133 @@
+body {
+    height: 100vh;
+    margin: 0;
+    background: #1a1a2e url('images/background.jpg') no-repeat center center/cover;
+    font-family: 'Arial', sans-serif;
+    color: white;
+}
+
+/* Top Right Navigation */
+.top-nav {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.admin-label {
+    font-weight: bold;
+    font-size: 1.2rem;
+    letter-spacing: 1px;
+}
+
+.logout-btn {
+    background: black;
+    color: white;
+    border: 4px solid white;
+    padding: 8px 20px;
+    font-weight: bold;
+    font-size: 1.2rem;
+    cursor: pointer;
+    box-shadow: 4px 4px 0px rgba(0,0,0,0.5); /* Adds that slight depth seen in image */
+}
+
+/* Center Menu Area */
+.menu-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+}
+
+.menu-title {
+    font-size: 3rem;
+    letter-spacing: 5px;
+    margin-bottom: 40px;
+}
+
+/* The 2x2 Grid */
+.button-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 30px;
+    width: 100%;
+    max-width: 700px;
+}
+
+.grid-btn {
+    background: black;
+    color: white;
+    border: 5px solid white;
+    padding: 30px 20px;
+    font-size: 1.5rem;
+    font-weight: bold;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: 0.2s;
+    line-height: 1.2;
+}
+
+.grid-btn:hover {
+    background: white;
+    color: black;
+}
+
+.logout-btn:hover {
+    background: white;
+    color: black;
+}
+
+/* Mobile Responsiveness */
+/* --- MOBILE STYLES FOR MENU.HTML --- */
+
+@media screen and (max-width: 700px) {
+    body {
+        /* Swap to mobile background */
+        background: #1a1a2e url('images/mobile-background.jpg') repeat center center/cover;
+    }
+
+    /* Top Nav Adjustments */
+    .top-nav {
+        top: 10px;
+        right: 10px;
+        gap: 5px;
+    }
+
+    .admin-label {
+        font-size: 0.6rem;
+    }
+
+    .logout-btn {
+        padding: 5px 10px;
+        font-size: 0.9rem;
+        border-width: 3px;
+    }
+
+    /* Center Content Adjustments */
+    .menu-container {
+        padding-top: 60px; /* Space for the top nav */
+        justify-content: flex-start; /* Push content up slightly */
+    }
+
+    .menu-title {
+        font-size: 2.2rem;
+        margin-bottom: 30px;
+        margin-top: 20px;
+    }
+
+    /* The Stacked Grid */
+    .button-grid {
+        grid-template-columns: 1fr; /* Force single column */
+        gap: 15px; /* Tighter gap for mobile screens */
+        width: 85%; /* centered with margin */
+    }
+
+    .grid-btn {
+        padding: 20px 10px; /* Shorter buttons to fit the screen height */
+        font-size: 1.2rem;
+        border-width: 4px;
+    }
+}

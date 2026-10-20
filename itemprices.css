@@ -1,0 +1,296 @@
+/* Base Layout */
+body {
+    background: #1a1a2e url('images/background.jpg') no-repeat center center/cover;
+    color: white;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    height: 100vh;
+    overflow: hidden;
+}
+
+
+.top-nav {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.admin-label {
+    font-weight: bold;
+    font-size: 1.2rem;
+    letter-spacing: 1px;
+}
+
+.logout-btn {
+    background: black;
+    color: white;
+    border: 4px solid white;
+    padding: 8px 20px;
+    font-weight: bold;
+    font-size: 1.2rem;
+    cursor: pointer;
+    box-shadow: 4px 4px 0px rgba(0,0,0,0.5); /* Adds that slight depth seen in image */
+}
+
+.content-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 60px;
+    height: 100%;
+}
+
+.page-title {
+    font-size: 2.5rem;
+    letter-spacing: 3px;
+    margin-bottom: 20px;
+}
+
+.edit-button {
+    display: flex;
+    /* This pushes the button to the far right of the div */
+    justify-content: flex-end; 
+    
+    /* Matches the width of your blue box so the right edges line up */
+    width: 100%; 
+    max-width: 1050px;
+    margin: 0 auto; /* Centers the wrapper itself on the screen */
+}
+
+/* Blue Item Box */
+/* Blue Item Box */
+
+.items-container {
+    background-color: #3f51b5;
+    border: 4px solid white;
+    display: flex;
+    justify-content: space-around;
+    padding: 40px 20px;
+    width: 80%;
+    max-width: 800px;
+    margin-bottom: 20px; /* Space between box and Edit button */
+}
+
+.item-card {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 180px; /* Adjust this so the longest text fits on one or two lines */
+}
+
+.item-image {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    margin-bottom: 10px;
+}
+
+.item-name {
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin-bottom: 5px;
+}
+
+/* Price Controls */
+.price-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Ensures the arrows/number are centered inside the div */
+    gap: 10px;
+}
+
+.arrow-btn {
+    background: gray; /* Default color */
+    border: 2px solid white;
+    color: white;
+    cursor: pointer;
+    padding: 2px 8px;
+    transition: background 0.3s; /* Smooth color change */
+}
+
+/* New class for the Green state */
+.arrow-btn.green {
+    background: #4CAF50; /* Green color */
+}
+
+
+
+.price-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.menu-button {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 1000;
+    background-color: black;
+    color: white;
+    border: 4px solid white;
+    padding: 8px 15px; /* Wider padding for the word "MENU" */
+    font-weight: bold;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+
+
+/* Hide the hamburger icon by default (on Desktop) */
+.menu-icon {
+    display: none;
+}
+
+
+.edit {
+        top: 20px;
+        left: 20px;
+        z-index: 1000;
+        background-color: black;
+        color: white;
+        border: 4px solid white;
+        padding: 8px 15px; /* Wider padding for the word "MENU" */
+        font-weight: bold;
+        font-size: 1.2rem;
+        cursor: pointer;
+    }
+
+.item-details {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* This centers the arrows and text horizontally */
+    width: 100%;
+}
+
+/*  EDIT TS */
+@media screen and (max-width: 700px) {
+    /* 1. Global Page Setup */
+
+    body {
+        display: flex;
+        flex-direction: column;
+        align-items: center; /* Centers the blue box */
+        height: auto; 
+        min-height: 100vh;
+        overflow-y: auto; /* Enables scrolling */
+        background: #1a1a2e url('images/mobile-background.jpg') no-repeat center center/cover;
+    }
+
+    .main-header {
+        height: 20px;
+        padding: 0 15px;
+    }
+
+    .items-container {
+    background-color: #3f51b5;
+    border: 4px solid white;
+    /* Change width to auto or a percentage with a larger max-width */
+    width: 90%; 
+    max-width: 450px; 
+    display: flex;
+    flex-direction: column;
+    padding: 20px; /* Give it some breathing room */
+    gap: 30px;
+    box-sizing: border-box;
+    /* This ensures it expands height-wise as much as needed */
+    height: auto; 
+}
+
+    .edit {
+        top: 20px;
+        left: 20px;
+        z-index: 1000;
+        background-color: black;
+        color: white;
+        border: 4px solid white;
+        padding: 8px 15px; /* Wider padding for the word "MENU" */
+        font-weight: bold;
+        font-size: 1.2rem;
+        cursor: pointer;
+    }
+
+    
+    .menu-button {
+        padding: 5px 10px;
+        border-width: 3px;
+        font-size: 0.85rem;
+    }
+
+    .top-nav {
+        gap: 8px;
+    }
+
+    .admin-label {
+        font-size: 0.6rem;
+    }
+
+    .logout-btn {
+        padding: 5px 10px;
+        font-size: 0.85rem;
+        border-width: 3px;
+    }
+
+
+    /* 3. Centered and Smaller Title */
+    .page-title {
+        font-size: 1.8rem; /* Scaled down */
+        text-align: center;
+        margin: 20px 0;
+        width: 100%;
+        letter-spacing: 2px;
+    }
+
+    /* 4. Blue Div with Side Margins */
+    .items-container {
+        background-color: #3f51b5;
+        border: 4px solid white;
+        width: 100%; /* This creates the left/right margin effect */
+        max-width: 340px;
+        display: flex;
+        flex-direction: column;
+        padding: 15px;
+        gap: 50px;
+        box-sizing: border-box;
+    }
+
+    /* 5. Item Row Scaling */
+   .item-card {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%; /* Forces card to stay inside the blue container */
+}
+
+    .item-image {
+        width: 75px;  /* Smaller images */
+        height: 75px;
+        border: 3px solid white;
+        background: white;
+    }
+
+    .item-details {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1; /* Allows this side to take up remaining space */
+    color: white;
+    /* Add this to prevent text from pushing outside the box */
+    word-wrap: break-word;
+    text-align: center;
+}
+
+.item-name {
+    font-size: 0.85rem;
+    margin-bottom: 5px;
+    width: 100%; /* Ensures text centers within its half of the card */
+}
+
+
+
+}

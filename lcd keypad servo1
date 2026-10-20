@@ -1,0 +1,90 @@
+#include <Keypad.h>
+#include <LiquidCrystal.h>
+#include <Servo.h>
+
+// ---------- LCD ----------
+LiquidCrystal lcd(5, 4, 3, 2, A4, A5);
+
+// ---------- SERVO ----------
+Servo myServo;
+
+// ---------- KEYPAD ----------
+const byte ROWS = 4;
+const byte COLS = 4;
+
+char keys[ROWS][COLS] = {
+  {'1','2','3','A'},
+  {'4','5','6','B'},
+  {'7','8','9','C'},
+  {'*','0','#','D'}
+};
+
+byte rowPins[ROWS] = {A0, A1, 11, 10};
+byte colPins[COLS] = {9, 8, 7, 6};
+
+Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
+
+// ---------- VARIABLES ----------
+bool selectItemsMode = false;
+bool servoMoved = false;   // ensures it rotates only once
+
+void setup() {
+  Serial.begin(9600);
+  lcd.begin(16, 2);
+
+  myServo.attach(A2);   // Servo signal pin
+  myServo.write(0);    // Start position
+
+  // ---------- STARTUP MENU ----------
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Menu:");
+  lcd.setCursor(0, 1);
+  lcd.print("1- Store points");
+  delay(2000);
+
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("2- Select items");
+  lcd.setCursor(0, 1);
+  lcd.print("3- Logout");
+  delay(2000);
+
+  lcd.clear();
+}
+
+void loop() {
+  char key = keypad.getKey();
+
+  if (key) {
+    Serial.println(key);
+
+    // ---- ENTER SELECT ITEMS ----
+    if (key == '2') {
+      selectItemsMode = true;
+      servoMoved = false;   // reset for new selection
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("choose option");
+      lcd.setCursor(0, 1);
+      lcd.print("1, 2, 3, 4");
+    }
+
+    // ---- SERVO ROTATE 180° ONCE ----
+    else if (selectItemsMode && key == '1' && !servoMoved) {
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("Dispensing...");
+
+      for (int pos = 0; pos <= 180; pos++) {
+        myServo.write(pos);
+        delay(15);
+      }
+
+      servoMoved = true;   // block further movement
+
+      lcd.setCursor(0, 1);
+      lcd.print("Done");
+    }
+  }
+}

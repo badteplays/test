@@ -1,0 +1,117 @@
+/* Reset and Font */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Arial', sans-serif; /* You can use 'Montserrat' for a closer match */
+}
+
+body {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* Replace .jpg with the actual extension of your file */
+    background: #1a1a2e url('images/background.jpg') no-repeat center center/cover;
+}
+
+.login-container {
+    width: 100%;
+    max-width: 500px;
+    text-align: center;
+    padding: 20px;
+}
+
+/* The White Bordered Header */
+.header-box {
+    border: 3px solid white;
+    padding: 20px;
+    margin-bottom: 50px;
+}
+
+.header-box h1 {
+    color: white;
+    font-size: 2rem;
+    letter-spacing: 2px;
+    line-height: 1.2;
+}
+
+/* Form Styling */
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+}
+
+input {
+    width: 350px;
+    padding: 12px 15px;
+    border: none;
+    font-weight: bold;
+    color: #000000;
+    font-size: 1rem;
+    outline: none;
+}
+
+input::placeholder {
+    color: #bbb;
+}
+
+/* Login Button */
+.login-btn {
+    margin-top: 10px;
+    width: 150px;
+    padding: 10px;
+    background-color: black;
+    color: white;
+    border: 3px solid white;
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.login-btn:hover {
+    background-color: white;
+    color: black;
+}
+
+input:focus {
+    color: black;
+}
+
+@media screen and (max-width: 700px) {
+    body {
+        /* Switch to the mobile background file */
+        background: #1a1a2e url('images/mobile-background.jpg') no-repeat center center/cover;
+    }
+
+    .login-container {
+        width: 90%; /* Take up more width on small screens */
+    }
+
+    .header-box {
+        padding: 15px 10px;
+        margin-bottom: 40px; /* Adjust spacing to match the image */
+    }
+
+    .header-box h1 {
+        font-size: 1.2rem; /* Slightly smaller text for mobile frames */
+    }
+
+    input {
+        width: 100%; /* Inputs now fill the container width */
+        max-width: 280px; /* Matches the narrow mobile look */
+        padding: 10px;
+        color: #000000;
+    }
+
+    .login-btn {
+        width: 120px;
+        font-size: 1rem;
+    }
+    input:focus {
+    color: black;
+}
+}

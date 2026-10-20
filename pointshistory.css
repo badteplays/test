@@ -1,0 +1,189 @@
+/* Base Layout */
+body {
+    background: #1a1a2e url('images/background.jpg') repeat-y center center/cover;
+    color: white;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    height: 100vh;
+    overflow: auto;
+}
+
+
+.top-nav {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.admin-label {
+    font-weight: bold;
+    font-size: 1.2rem;
+    letter-spacing: 1px;
+}
+
+.logout-btn {
+    background: black;
+    color: white;
+    border: 4px solid white;
+    padding: 8px 20px;
+    font-weight: bold;
+    font-size: 1.2rem;
+    cursor: pointer;
+    box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.5);
+    /* Adds that slight depth seen in image */
+}
+
+.content-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 60px;
+    height: 100%;
+    gap: 20px;
+}
+
+.page-title {
+    font-size: 2.5rem;
+    letter-spacing: 3px;
+    margin-bottom: 20px;
+}
+
+.edit-button {
+    display: flex;
+    /* This pushes the button to the far right of the div */
+    justify-content: flex-end;
+
+    /* Matches the width of your blue box so the right edges line up */
+    width: 100%;
+    max-width: 1050px;
+    margin: 0 auto;
+    /* Centers the wrapper itself on the screen */
+}
+
+/* Blue Item Box */
+.items-container {
+    background-color: #40f8a1;
+    border: 4px solid white;
+    display: flex;
+    justify-content: space-around;
+    padding: 40px 20px;
+    width: 80%;
+    max-width: 800px;
+    margin-bottom: 20px;
+    /* Space between box and Edit button */
+}
+
+.menu-button {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 1000;
+    background-color: black;
+    color: white;
+    border: 4px solid white;
+    padding: 8px 15px;
+    /* Wider padding for the word "MENU" */
+    font-weight: bold;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+/* Hide the hamburger icon by default (on Desktop) */
+.menu-icon {
+    display: none;
+}
+
+.accounts-container {
+        padding-bottom: 90px;
+    }
+
+
+#accounts-table {
+    width: 100%;
+    border-collapse: collapse;
+    color: rgb(0, 0, 0);
+    /* Text color */
+    font-family: sans-serif;
+    background-color: #fdffb6;
+        text-align: center;
+    padding: 20px;
+}
+
+#accounts-table th {
+    background-color: #000000;
+    /* Matches your UI accent color */
+    color: rgb(255, 255, 255);
+    padding: 5px;
+}
+
+#accounts-table td {
+    padding: 5px;
+    width: 199px;
+    border-bottom: 1px solid #444;
+}
+
+#accounts-table tr:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    /* Subtle hover effect */
+}
+
+
+
+@media screen and (max-width: 700px) {
+    body {
+        height: auto;
+        min-height: 100vh;
+        overflow-y: auto;
+        background: #1a1a2e url('images/mobile-background.jpg') no-repeat center center/cover;
+        padding-bottom: 20px;
+    }
+
+    .items-container {
+        width: 95%;
+        padding: 5px;
+        margin: 10px auto;
+        overflow: hidden; /* Keeps the table strictly inside */
+        border-radius: 8px;
+    }
+
+    .accounts-container {
+        padding-inline: 20px;
+    }
+
+    #accounts-table {
+        table-layout: fixed; /* Forces columns to stay in their lane */
+        font-size: 0.5rem;
+    }
+
+    /* Column Width Allocation (Total 100%) */
+    #accounts-table th:nth-child(1), #accounts-table td:nth-child(1) { width: 20%; } /* Name */
+    #accounts-table th:nth-child(2), #accounts-table td:nth-child(2) { width: 22%; word-break: break-all; } /* UID */
+    #accounts-table th:nth-child(3), #accounts-table td:nth-child(3) { width: 18%; } /* Date */
+    #accounts-table th:nth-child(4), #accounts-table td:nth-child(4) { width: 14%; } /* Time */
+    #accounts-table th:nth-child(5), #accounts-table td:nth-child(5) { width: 13%; } /* Item */
+    #accounts-table th:nth-child(6), #accounts-table td:nth-child(6) { width: 13%; } /* Points */
+
+    #accounts-table th, #accounts-table td {
+        padding: 6px 2px;
+        vertical-align: middle;
+    }
+
+    .page-title {
+        font-size: 1.8rem;
+        text-align: center;
+        margin: 20px 0;
+    }
+
+    .logout-btn, .menu-button {
+        padding: 5px 10px;
+        font-size: 0.85rem;
+        border-width: 3px;
+    }
+
+    .admin-label {
+        font-size: 0.6rem;
+    }
+}

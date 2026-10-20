@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <title>Accounts</title>
+ <link rel="stylesheet" href="accounts.css">
+ <script type="module" src="accounts.js"></script>
+</head>
+
+<body>
+ <header class="main-header">
+ <button id="menu-button" class="menu-button">
+ <span class="menu-text">MENU</span>
+ <span class="menu-icon">☰</span>
+ </button>
+
+ <nav class="top-nav">
+ <span class="admin-label">ADMIN |</span>
+ <button id="logoutBtn" class="logout-btn">LOGOUT</button>
+ </nav>
+ </header>
+
+ <main class="content-wrapper">
+ <h1 class="page-title">ACCOUNTS</h1>
+ <!---
+
+ <div class="items-container">
+
+ </div>
+ -->
+ <!--
+ <div class="new-user">
+ <div>Add New User:</div>
+ <div class="add-account-form">
+ <input type="text" id="newName" placeholder="Name" style="padding: 5px;">
+ <input type="text" id="newUID" placeholder="RFID UID" style="padding: 5px;">
+ <input type="text" id="newPass" placeholder="PIN/Password" style="padding: 5px;">
+ <button id="addAccountBtn"
+style="background: #00ff88; font-weight: bold; padding: 5px 15px; cursor: pointer;">+ ADD
+ USER</button>
+ </div>
+ </div>
+
+ <div class="sync-section" style="margin-bottom: 10px; display: flex;
+flex-direction: row;">
+ <button id="syncBtn" style="background: #007bff; color: white; font-weight: bold; padding: 10px 20px; cursor: pointer; border: 4px solid white;">
+ SYNC TO MEGA
+ </button>
+  <div id="sync-display-box" style="background: black; color: #00ff88; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 12px; min-width: 250px; min-height: 50px; border: 1px solid #333;">
+        Waiting for sync data...
+    </div>
+ </div>
+-->
+
+ <div class="accounts-container">
+ <table id="accounts-table">
+ <thead>
+ <tr>
+ <!--<th>NAME</th>-->
+ <th>UID</th>
+ <!--<th>PASSWORD</th>-->
+ <th>POINTS</th>
+ <!--<th>ACTIONS</th>-->
+ </tr>
+ </thead>
+ <tbody id="table-body">
+ </tbody>
+ </table>
+ </div>
+
+ </main>
+</body>
+
+</html> 

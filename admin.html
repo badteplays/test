@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accounts</title>
+    <link rel="stylesheet" href="admin.css">
+    <script type="module" src="admin.js"></script>
+</head>
+
+<body>
+    <header class="main-header">
+        <button id="menu-button" class="menu-button">
+            <span class="menu-text">MENU</span>
+            <span class="menu-icon">☰</span>
+        </button>
+
+        <nav class="top-nav">
+            <span class="admin-label">ADMIN |</span>
+            <button id="logoutBtn" class="logout-btn">LOGOUT</button>
+        </nav>
+    </header>
+
+    <main class="content-wrapper">
+        <h1 class="page-title">ADMIN</h1>
+        <div class="tables">
+            <div class="accounts-container">
+                <table id="accounts-table">
+                    <thead>
+                        <tr>
+                            <th>UID</th>
+                            <th>DATE</th>
+                            <th>TIME</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                    </tbody>
+                </table>
+            </div>
+            <div class="accounts-container">
+                <table id="accounts-table">
+                    <thead>
+                        <tr>
+                            <th>NOTIFS</th>
+                            <th>DATE</th>
+                            <th>TIME</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</body>
+
+</html>
