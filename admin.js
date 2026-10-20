@@ -17,13 +17,8 @@ const auth = getAuth();
 
 // --- 1. ROUTE GUARD & SESSION CHECK ---
 onAuthStateChanged(auth, (user) => {
-    if (!user) {
-
-        console.log("Access denied. Redirecting to login...");
-        window.location.replace("login.html");
-    } else {
+    if (user) {
         console.log("Welcome, Admin:", user.email);
-        // Page content is safe to interact with
     }
 });
 

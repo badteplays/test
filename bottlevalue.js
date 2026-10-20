@@ -148,7 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // --- 6. ROUTE GUARD ---
 onAuthStateChanged(auth, (user) => {
     if (!user) {
-        window.location.replace("login.html");
+        // window.location.replace("login.html");
     } else {
         console.log("Admin logged in as:", user.email);
     }

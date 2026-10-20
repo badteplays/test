@@ -128,5 +128,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Auth Guard
 onAuthStateChanged(auth, (user) => {
-    if (!user) window.location.replace("login.html");
+    if (user) console.log("Admin Session Active");
 });

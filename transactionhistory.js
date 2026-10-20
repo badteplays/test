@@ -132,9 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // --- 3. ROUTE GUARD ---
 onAuthStateChanged(auth, (user) => {
-    if (!user) {
-        window.location.replace("login.html");
-    } else {
+    if (user) {
         console.log("Admin Session Active");
     }
 });
