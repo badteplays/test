@@ -26,12 +26,16 @@
     <main class="content-wrapper">
         <h1 class="page-title">ACCOUNTS</h1>
 
+        <!-- SECTION 1: DISPENSER / RFID ACCOUNTS -->
+        <h2 class="section-heading">DISPENSER / RFID USER ACCOUNTS</h2>
+
         <div class="new-user">
             <div class="new-user-title">Add New RFID User:</div>
             <div class="add-account-form">
                 <input type="text" id="newName" placeholder="Name" aria-label="User Name">
+                <input type="email" id="newEmail" placeholder="Email (e.g. user@supplify.com)" aria-label="User Email" spellcheck="false" autocapitalize="none" autocorrect="off">
                 <input type="text" id="newUID" placeholder="RFID UID (e.g. 2722c91)" aria-label="RFID UID" spellcheck="false" autocapitalize="none">
-                <input type="text" id="newPass" placeholder="4-Digit PIN (e.g. 0000)" aria-label="PIN or Password" inputmode="numeric" maxlength="10">
+                <input type="text" id="newPass" placeholder="PIN / Password (e.g. 0000)" aria-label="PIN or Password" maxlength="20">
                 <input type="number" id="newPoints" placeholder="Initial Points (0)" aria-label="Initial Points" min="0" value="0">
                 <button type="button" id="addAccountBtn" class="add-user-btn">+ ADD USER</button>
             </div>
@@ -44,16 +48,17 @@
         </div>
 
         <div class="table-controls">
-            <input type="search" id="account-search" class="search-input" placeholder="Search by Name or UID..." aria-label="Search accounts by Name or UID">
+            <input type="search" id="account-search" class="search-input" placeholder="Search by Name, Email, or UID..." aria-label="Search accounts by Name, Email, or UID">
             <button type="button" id="export-accounts-btn" class="export-btn">EXPORT CSV</button>
         </div>
 
         <div class="accounts-container">
             <div tabindex="0" role="region" aria-label="Registered RFID Accounts" class="table-wrapper">
-                <table id="accounts-table">
+                <table id="accounts-table" class="data-table">
                     <thead>
                         <tr>
                             <th>NAME</th>
+                            <th>EMAIL</th>
                             <th>UID</th>
                             <th>PASSWORD</th>
                             <th>POINTS</th>
@@ -61,7 +66,39 @@
                         </tr>
                     </thead>
                     <tbody id="table-body">
-                        <tr><td colspan="5">Loading accounts...</td></tr>
+                        <tr><td colspan="6">Loading accounts...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- SECTION 2: WEB ADMIN LOGIN ACCOUNTS -->
+        <h2 class="section-heading">WEB ADMIN LOGIN ACCOUNTS</h2>
+
+        <div class="new-user">
+            <div class="new-user-title">Add New Web Admin Account:</div>
+            <div class="add-account-form">
+                <input type="text" id="newAdminUsername" placeholder="Username (e.g. admin)" aria-label="Admin Username" spellcheck="false" autocapitalize="none" autocorrect="off">
+                <input type="email" id="newAdminEmail" placeholder="Email (e.g. admin@supplify.local)" aria-label="Admin Email" spellcheck="false" autocapitalize="none" autocorrect="off">
+                <input type="text" id="newAdminPass" placeholder="Password" aria-label="Admin Password">
+                <button type="button" id="addAdminBtn" class="add-user-btn">+ ADD ADMIN</button>
+            </div>
+            <div id="admin-account-feedback" class="account-feedback" role="status" aria-live="polite"></div>
+        </div>
+
+        <div class="accounts-container">
+            <div tabindex="0" role="region" aria-label="Web Admin Login Accounts" class="table-wrapper">
+                <table id="web-admins-table" class="data-table">
+                    <thead>
+                        <tr>
+                            <th>USERNAME</th>
+                            <th>EMAIL</th>
+                            <th>PASSWORD</th>
+                            <th>ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="web-admins-table-body">
+                        <tr><td colspan="4">Loading web admin accounts...</td></tr>
                     </tbody>
                 </table>
             </div>

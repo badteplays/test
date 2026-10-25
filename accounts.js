@@ -50,6 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const menuButton = document.getElementById('menu-button');
     const addAccountBtn = document.getElementById('addAccountBtn');
     const newNameInput = document.getElementById('newName');
+    const newEmailInput = document.getElementById('newEmail');
     const newUIDInput = document.getElementById('newUID');
     const newPassInput = document.getElementById('newPass');
     const newPointsInput = document.getElementById('newPoints');
@@ -60,17 +61,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const statusCircle = document.getElementById('syncStatus');
     const syncDisplayBox = document.getElementById('sync-display-box');
 
+    // Web Admin Login Accounts elements
+    const webAdminsTableBody = document.getElementById('web-admins-table-body');
+    const newAdminUsernameInput = document.getElementById('newAdminUsername');
+    const newAdminEmailInput = document.getElementById('newAdminEmail');
+    const newAdminPassInput = document.getElementById('newAdminPass');
+    const addAdminBtn = document.getElementById('addAdminBtn');
+    const adminFeedbackEl = document.getElementById('admin-account-feedback');
+
     let accountsCache = {};
     let filteredUIDs = [];
+    let webAdminsCache = {};
 
-    function showFeedback(msg, isError = false) {
-        if (!feedbackEl) return;
-        feedbackEl.textContent = msg;
-        feedbackEl.className = 'account-feedback ' + (isError ? 'error' : 'success');
+    function showFeedback(msg, isError = false, targetEl = feedbackEl) {
+        if (!targetEl) return;
+        targetEl.textContent = msg;
+        targetEl.className = 'account-feedback ' + (isError ? 'error' : 'success');
         setTimeout(() => {
-            if (feedbackEl.textContent === msg) {
-                feedbackEl.textContent = '';
-                feedbackEl.className = 'account-feedback';
+            if (targetEl.textContent === msg) {
+                targetEl.textContent = '';
+                targetEl.className = 'account-feedback';
             }
         }, 4000);
     }
@@ -92,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- 2. LOAD ACCOUNTS DATA (SORTED ALPHABETICALLY + SEARCHABLE) ---
+    // --- 2. LOAD DISPENSER / RFID ACCOUNTS DATA ---
     const accountsRef = ref(db, 'accounts/');
     onValue(accountsRef, (snapshot) => {
         accountsCache = snapshot.val() || {};
@@ -100,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, (err) => {
         console.error("Failed to load accounts:", err);
         if (tableBody) {
-            tableBody.innerHTML = '<tr><td colspan="5">Error loading accounts.</td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="6">Error loading accounts.</td></tr>';
         }
     });
 
@@ -110,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const uids = Object.keys(accountsCache);
         if (uids.length === 0) {
-            tableBody.innerHTML = '<tr><td colspan="5">No accounts found.</td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="6">No accounts found.</td></tr>';
             filteredUIDs = [];
             return;
         }
@@ -127,12 +137,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const user = accountsCache[uid] || {};
             return (
                 uid.toLowerCase().includes(query) ||
-                String(user.name || '').toLowerCase().includes(query)
+                String(user.name || '').toLowerCase().includes(query) ||
+                String(user.email || '').toLowerCase().includes(query)
             );
         });
 
         if (filteredUIDs.length === 0) {
-            tableBody.innerHTML = '<tr><td colspan="5">No matching accounts found.</td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="6">No matching accounts found.</td></tr>';
             return;
         }
 
@@ -142,6 +153,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const tdName = document.createElement('td');
             tdName.textContent = user.name || 'Unnamed';
+
+            const tdEmail = document.createElement('td');
+            tdEmail.textContent = user.email || '-';
 
             const tdUid = document.createElement('td');
             tdUid.textContent = uid;
@@ -157,6 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const tdActions = document.createElement('td');
             const actions = [
                 { label: 'Edit Name', type: 'name', cls: 'edit-action-btn' },
+                { label: 'Edit Email', type: 'email', cls: 'edit-action-btn' },
                 { label: 'Edit Pass', type: 'pass', cls: 'edit-action-btn' },
                 { label: 'Edit Pts', type: 'points', cls: 'edit-action-btn' },
                 { label: 'Delete', type: 'delete', cls: 'edit-action-btn delete-btn' }
@@ -171,16 +186,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 tdActions.appendChild(btn);
             });
 
-            tr.append(tdName, tdUid, tdPass, tdPts, tdActions);
+            tr.append(tdName, tdEmail, tdUid, tdPass, tdPts, tdActions);
             tableBody.appendChild(tr);
         });
     }
 
     if (searchInput) {
-        searchInput.addEventListener('input', renderAccountsTable);
+        searchInput.addEventListener('input', () => {
+            renderAccountsTable();
+            renderWebAdminsTable();
+        });
     }
 
-    // --- 3. EVENT DELEGATION (EDIT & DELETE) ---
+    // --- 3. EVENT DELEGATION FOR DISPENSER ACCOUNTS (EDIT & DELETE) ---
     if (tableBody) {
         tableBody.addEventListener('click', (e) => {
             const btn = e.target.closest('.edit-action-btn');
@@ -209,6 +227,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (newPass !== null && newPass.trim() !== "") {
                     updateAccount(uid, { password: newPass.trim() }, `Updated PIN/password for ${currentUser.name || uid}.`);
                 }
+            } else if (type === 'email') {
+                const newEmail = prompt(`Enter new email for ${currentUser.name || uid}:`, String(currentUser.email ?? ''));
+                if (newEmail !== null && newEmail.trim() !== "") {
+                    updateAccount(uid, { email: newEmail.trim() }, `Updated email for ${currentUser.name || uid} to "${newEmail.trim()}".`);
+                }
             } else if (type === 'name') {
                 const newName = prompt(`Enter new name for UID ${uid}:`, String(currentUser.name ?? ''));
                 if (newName !== null && newName.trim() !== "") {
@@ -232,10 +255,11 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch((err) => showFeedback("Update failed: " + err.message, true));
     }
 
-    // --- 4. NEW ACCOUNT CREATION ---
+    // --- 4. NEW DISPENSER ACCOUNT CREATION ---
     if (addAccountBtn) {
         addAccountBtn.addEventListener('click', () => {
             const name = newNameInput ? newNameInput.value.trim() : '';
+            const email = newEmailInput ? newEmailInput.value.trim() : '';
             const uid = newUIDInput ? newUIDInput.value.trim().toLowerCase() : '';
             const pass = newPassInput ? newPassInput.value.trim() : '';
             const ptsRaw = newPointsInput ? newPointsInput.value.trim() : '0';
@@ -246,19 +270,170 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            const finalEmail = email || `${name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() || uid}@supplify.com`;
+
             set(ref(db, 'accounts/' + uid), {
                 name: name,
+                email: finalEmail,
                 password: pass,
                 points: pts
             })
                 .then(() => {
-                    showFeedback(`Added user "${name}" (${uid}) with ${pts} pts!`, false);
+                    showFeedback(`Added user "${name}" (${finalEmail}) with ${pts} pts!`, false);
                     if (newNameInput) newNameInput.value = '';
+                    if (newEmailInput) newEmailInput.value = '';
                     if (newUIDInput) newUIDInput.value = '';
                     if (newPassInput) newPassInput.value = '';
                     if (newPointsInput) newPointsInput.value = '0';
                 })
                 .catch((err) => showFeedback("Error adding user: " + err.message, true));
+        });
+    }
+
+    // --- 4.5. WEB ADMIN LOGIN ACCOUNTS (LOAD, ADD, EDIT, DELETE) ---
+    const webAdminsRef = ref(db, 'webAdmins/');
+    onValue(webAdminsRef, (snapshot) => {
+        webAdminsCache = snapshot.val() || {};
+        renderWebAdminsTable();
+    }, (err) => {
+        console.error("Failed to load webAdmins:", err);
+        if (webAdminsTableBody) {
+            webAdminsTableBody.innerHTML = '<tr><td colspan="4">Error loading web admin accounts.</td></tr>';
+        }
+    });
+
+    function renderWebAdminsTable() {
+        if (!webAdminsTableBody) return;
+        webAdminsTableBody.innerHTML = '';
+
+        const keys = Object.keys(webAdminsCache);
+        if (keys.length === 0) {
+            webAdminsTableBody.innerHTML = '<tr><td colspan="4">No web admin accounts found.</td></tr>';
+            return;
+        }
+
+        const query = (searchInput ? searchInput.value : '').trim().toLowerCase();
+        const filteredKeys = keys.filter((k) => {
+            if (!query) return true;
+            const adm = webAdminsCache[k] || {};
+            return (
+                k.toLowerCase().includes(query) ||
+                String(adm.username || '').toLowerCase().includes(query) ||
+                String(adm.email || '').toLowerCase().includes(query)
+            );
+        });
+
+        if (filteredKeys.length === 0) {
+            webAdminsTableBody.innerHTML = '<tr><td colspan="4">No matching web admin accounts found.</td></tr>';
+            return;
+        }
+
+        filteredKeys.forEach((key) => {
+            const adm = webAdminsCache[key] || {};
+            const tr = document.createElement('tr');
+
+            const tdUser = document.createElement('td');
+            tdUser.textContent = adm.username || key;
+
+            const tdEmail = document.createElement('td');
+            tdEmail.textContent = adm.email || '-';
+
+            const tdPass = document.createElement('td');
+            tdPass.textContent = adm.password ?? '';
+
+            const tdActions = document.createElement('td');
+            const actions = [
+                { label: 'Edit Username', type: 'username', cls: 'edit-action-btn' },
+                { label: 'Edit Email', type: 'email', cls: 'edit-action-btn' },
+                { label: 'Edit Pass', type: 'pass', cls: 'edit-action-btn' },
+                { label: 'Delete', type: 'delete', cls: 'edit-action-btn delete-btn' }
+            ];
+            actions.forEach((act) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = act.cls;
+                btn.setAttribute('data-key', key);
+                btn.setAttribute('data-type', act.type);
+                btn.textContent = act.label;
+                tdActions.appendChild(btn);
+            });
+
+            tr.append(tdUser, tdEmail, tdPass, tdActions);
+            webAdminsTableBody.appendChild(tr);
+        });
+    }
+
+    if (addAdminBtn) {
+        addAdminBtn.addEventListener('click', () => {
+            const usernameRaw = newAdminUsernameInput ? newAdminUsernameInput.value.trim() : '';
+            const emailRaw = newAdminEmailInput ? newAdminEmailInput.value.trim() : '';
+            const passwordRaw = newAdminPassInput ? newAdminPassInput.value : '';
+
+            if ((!usernameRaw && !emailRaw) || !passwordRaw) {
+                showFeedback("Please enter a Username or Email and a Password.", true, adminFeedbackEl);
+                return;
+            }
+
+            const username = usernameRaw || emailRaw.split('@')[0];
+            const email = emailRaw || (usernameRaw.includes('@') ? usernameRaw : `${usernameRaw}@supplify.local`);
+            const key = username.replace(/[.#$/[\]\s]/g, '_').toLowerCase() || ('admin_' + Date.now());
+            const now = new Date();
+            const createdAt = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+
+            set(ref(db, 'webAdmins/' + key), {
+                username,
+                email,
+                password: passwordRaw,
+                createdAt
+            })
+                .then(() => {
+                    showFeedback(`Added web admin "${username}" (${email})!`, false, adminFeedbackEl);
+                    if (newAdminUsernameInput) newAdminUsernameInput.value = '';
+                    if (newAdminEmailInput) newAdminEmailInput.value = '';
+                    if (newAdminPassInput) newAdminPassInput.value = '';
+                })
+                .catch((err) => showFeedback("Error adding admin: " + err.message, true, adminFeedbackEl));
+        });
+    }
+
+    if (webAdminsTableBody) {
+        webAdminsTableBody.addEventListener('click', (e) => {
+            const btn = e.target.closest('.edit-action-btn');
+            if (!btn) return;
+
+            const key = btn.getAttribute('data-key');
+            const type = btn.getAttribute('data-type');
+            const currentAdmin = webAdminsCache[key] || {};
+
+            if (type === 'username') {
+                const nextUser = prompt(`Enter new username for ${currentAdmin.email || key}:`, String(currentAdmin.username || key));
+                if (nextUser !== null && nextUser.trim() !== "") {
+                    update(ref(db, 'webAdmins/' + key), { username: nextUser.trim() })
+                        .then(() => showFeedback(`Updated username to "${nextUser.trim()}".`, false, adminFeedbackEl))
+                        .catch((err) => showFeedback("Update failed: " + err.message, true, adminFeedbackEl));
+                }
+            } else if (type === 'email') {
+                const nextEmail = prompt(`Enter new email for ${currentAdmin.username || key}:`, String(currentAdmin.email || ''));
+                if (nextEmail !== null && nextEmail.trim() !== "") {
+                    update(ref(db, 'webAdmins/' + key), { email: nextEmail.trim() })
+                        .then(() => showFeedback(`Updated email to "${nextEmail.trim()}".`, false, adminFeedbackEl))
+                        .catch((err) => showFeedback("Update failed: " + err.message, true, adminFeedbackEl));
+                }
+            } else if (type === 'pass') {
+                const nextPass = prompt(`Enter new login password for ${currentAdmin.username || key}:`, String(currentAdmin.password || ''));
+                if (nextPass !== null && nextPass.trim() !== "") {
+                    update(ref(db, 'webAdmins/' + key), { password: nextPass })
+                        .then(() => showFeedback(`Updated password for ${currentAdmin.username || key}.`, false, adminFeedbackEl))
+                        .catch((err) => showFeedback("Update failed: " + err.message, true, adminFeedbackEl));
+                }
+            } else if (type === 'delete') {
+                const label = currentAdmin.email || currentAdmin.username || key;
+                if (confirm(`Are you sure you want to delete web admin "${label}"?`)) {
+                    set(ref(db, 'webAdmins/' + key), null)
+                        .then(() => showFeedback(`Deleted web admin "${label}".`, false, adminFeedbackEl))
+                        .catch((err) => showFeedback("Delete failed: " + err.message, true, adminFeedbackEl));
+                }
+            }
         });
     }
 
@@ -341,13 +516,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- 7. EXPORT CSV ---
     if (exportBtn) {
         exportBtn.addEventListener('click', () => {
-            const lines = ['Name,UID,Password,Points'];
+            const lines = ['Name,Email,UID,Password,Points'];
             filteredUIDs.forEach((uid) => {
                 const u = accountsCache[uid] || {};
                 const name = String(u.name || '').replace(/"/g, '""');
+                const email = String(u.email || '').replace(/"/g, '""');
                 const pass = String(u.password ?? '').replace(/"/g, '""');
                 const pts = u.points ?? 0;
-                lines.push(`"${name}","${uid}","${pass}",${pts}`);
+                lines.push(`"${name}","${email}","${uid}","${pass}",${pts}`);
             });
             const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);

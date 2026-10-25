@@ -59,14 +59,23 @@ body {
     align-items: center;
     padding: 60px 20px 60px;
     min-height: 100%;
-    gap: 18px;
+    gap: 16px;
     box-sizing: border-box;
 }
 
 .page-title {
     font-size: 2.5rem;
     letter-spacing: 3px;
-    margin-bottom: 5px;
+    margin-bottom: 0;
+}
+
+.section-heading {
+    font-size: 1.3rem;
+    letter-spacing: 1.5px;
+    color: #40f8a1;
+    margin: 12px 0 0;
+    text-align: center;
+    text-shadow: 2px 2px 0 #000;
 }
 
 .menu-button {
@@ -92,8 +101,8 @@ body {
     padding: 15px 20px;
     background: rgba(0, 0, 0, 0.85);
     border: 3px solid white;
-    width: 90%;
-    max-width: 900px;
+    width: 95%;
+    max-width: 1050px;
     box-sizing: border-box;
 }
 
@@ -153,8 +162,8 @@ body {
     align-items: center;
     justify-content: center;
     gap: 20px;
-    width: 90%;
-    max-width: 900px;
+    width: 95%;
+    max-width: 1050px;
 }
 
 #syncBtn {
@@ -188,8 +197,8 @@ body {
 .table-controls {
     display: flex;
     gap: 12px;
-    width: 90%;
-    max-width: 900px;
+    width: 95%;
+    max-width: 1050px;
     justify-content: space-between;
 }
 
@@ -215,11 +224,11 @@ body {
     color: black;
 }
 
-/* Accounts Table */
+/* Accounts Tables */
 .accounts-container {
-    width: 90%;
-    max-width: 900px;
-    margin: 0 auto 50px;
+    width: 95%;
+    max-width: 1050px;
+    margin: 0 auto 25px;
     text-align: center;
 }
 
@@ -231,7 +240,7 @@ body {
     border: 3px solid white;
 }
 
-#accounts-table {
+.data-table {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
@@ -241,25 +250,25 @@ body {
     text-align: center;
 }
 
-#accounts-table thead {
+.data-table thead {
     position: sticky;
     inset-block-start: 0;
     z-index: 1;
 }
 
-#accounts-table th {
+.data-table th {
     background-color: #000000;
     color: rgb(255, 255, 255);
     padding: 12px 8px;
     text-align: center;
 }
 
-#accounts-table td {
+.data-table td {
     padding: 10px 8px;
     border-bottom: 1px solid #333;
 }
 
-#accounts-table tr:hover {
+.data-table tr:hover {
     background-color: rgba(255, 255, 255, 0.2);
 }
 
@@ -267,11 +276,12 @@ body {
     background-color: #00ff88;
     color: black;
     border: 1px solid #000;
-    padding: 5px 10px;
+    padding: 5px 9px;
     margin: 2px;
     cursor: pointer;
     font-weight: bold;
     border-radius: 4px;
+    font-size: 0.85rem;
 }
 
 .edit-action-btn.delete-btn {
@@ -338,25 +348,13 @@ body {
         min-width: unset;
     }
 
-    #accounts-table {
+    .data-table {
         font-size: 0.7rem;
-        table-layout: fixed;
     }
 
-    #accounts-table th:nth-child(1),
-    #accounts-table td:nth-child(1) { width: 22%; }
-    #accounts-table th:nth-child(2),
-    #accounts-table td:nth-child(2) { width: 20%; word-break: break-all; }
-    #accounts-table th:nth-child(3),
-    #accounts-table td:nth-child(3) { width: 15%; }
-    #accounts-table th:nth-child(4),
-    #accounts-table td:nth-child(4) { width: 16%; word-break: break-all; }
-    #accounts-table th:nth-child(5),
-    #accounts-table td:nth-child(5) { width: 27%; }
-
-    #accounts-table th,
-    #accounts-table td {
-        padding: 6px 3px;
+    .data-table th,
+    .data-table td {
+        padding: 6px 4px;
     }
 
     .edit-action-btn {
