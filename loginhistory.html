@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login History</title>
+    <title>Login History - Supplify Stationery Dispenser</title>
     <link rel="stylesheet" href="loginhistory.css">
     <script type="module" src="loginhistory.js"></script>
 </head>
@@ -21,25 +21,33 @@
             <button id="logoutBtn" class="logout-btn">LOGOUT</button>
         </nav>
     </header>
- 
+
     <main class="content-wrapper">
         <h1 class="page-title">LOGIN<br>HISTORY</h1>
 
-        <div class="accounts-container">
-            <table id="accounts-table">
-                <thead>
-                    <tr>
-                        <th>NAME</th>
-                        <th>UID</th>
-                        <th>DATE</th>
-                        <th>TIME</th>
-                    </tr>
-                </thead>
-                <tbody id="table-body">
-                </tbody>
-            </table>
+        <div class="table-controls">
+            <input type="search" id="history-search" class="search-input" placeholder="Search by Name, UID, or Date..." aria-label="Search login history">
+            <button type="button" id="export-csv-btn" class="export-btn">EXPORT CSV</button>
         </div>
-        
+
+        <div class="accounts-container">
+            <div tabindex="0" role="region" aria-label="Login History Table" class="table-wrapper">
+                <table id="accounts-table">
+                    <thead>
+                        <tr>
+                            <th>NAME</th>
+                            <th>UID</th>
+                            <th>DATE</th>
+                            <th>TIME</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        <tr><td colspan="4" style="text-align:center; padding: 20px;">Loading login history...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
     </main>
 </body>
 

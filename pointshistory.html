@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Points History</title>
+    <title>Points History - Supplify Stationery Dispenser</title>
     <link rel="stylesheet" href="pointshistory.css">
     <script type="module" src="pointshistory.js"></script>
 </head>
@@ -21,26 +21,45 @@
             <button id="logoutBtn" class="logout-btn">LOGOUT</button>
         </nav>
     </header>
- 
+
     <main class="content-wrapper">
         <h1 class="page-title">POINTS<br>HISTORY</h1>
 
-        <div class="accounts-container">
-            <table id="accounts-table">
-                <thead>
-                    <tr>
-                        <th>NAME</th>
-                        <th>UID</th>
-                        <th>DATE</th>
-                        <th>TIME</th>
-                        <th>POINTS</th>
-                    </tr>
-                </thead>
-                <tbody id="table-body">
-                </tbody>
-            </table>
+        <div class="log-points-box">
+            <div class="log-points-title">Record Bottle Deposit Points:</div>
+            <div class="log-points-form">
+                <input type="text" id="deposit-name" placeholder="Name (e.g. Maria)" aria-label="Student Name">
+                <input type="text" id="deposit-uid" placeholder="RFID UID (e.g. 2722c91)" aria-label="RFID UID">
+                <input type="number" id="deposit-points" placeholder="Points Earned (+)" min="1" value="2" aria-label="Points Earned">
+                <button type="button" id="add-points-log-btn" class="add-points-btn">+ RECORD POINTS</button>
+            </div>
+            <div id="points-feedback" class="points-feedback" role="status" aria-live="polite"></div>
         </div>
-        
+
+        <div class="table-controls">
+            <input type="search" id="history-search" class="search-input" placeholder="Search by Name, UID, or Date..." aria-label="Search points history">
+            <button type="button" id="export-csv-btn" class="export-btn">EXPORT CSV</button>
+        </div>
+
+        <div class="accounts-container">
+            <div tabindex="0" role="region" aria-label="Points History Table" class="table-wrapper">
+                <table id="accounts-table">
+                    <thead>
+                        <tr>
+                            <th>NAME</th>
+                            <th>UID</th>
+                            <th>DATE</th>
+                            <th>TIME</th>
+                            <th>POINTS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        <tr><td colspan="5" style="text-align:center; padding: 20px;">Loading points history...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
     </main>
 </body>
 

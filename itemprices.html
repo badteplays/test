@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Item Prices</title>
+    <title>Item Prices - Supplify Stationery Dispenser</title>
     <link rel="stylesheet" href="itemprices.css">
     <script type="module" src="itemprices.js"></script>
 </head>
@@ -25,53 +25,68 @@
         <h1 class="page-title">ITEM PRICES</h1>
 
         <div class="items-container">
-            
-            <div class="item-card">
+
+            <div class="item-card" data-key="pen">
                 <img src="images/pen.jpg" alt="Pen" class="item-image red-border">
                 <div class="item-details">
                     <p class="item-name">PEN</p>
+                    <label class="field-label">POINTS COST</label>
                     <div class="price-controls">
-    <input type="number" class="price-input" step="0.1" min="0" value="0" disabled>
-</div>
+                        <button type="button" class="arrow-btn" data-dir="down" aria-label="Decrease Pen Price">◀</button>
+                        <input type="number" class="price-input" step="1" min="0" value="0" aria-label="Pen Points Cost" disabled>
+                        <button type="button" class="arrow-btn" data-dir="up" aria-label="Increase Pen Price">▶</button>
+                    </div>
                 </div>
             </div>
 
-            <div class="item-card">
+            <div class="item-card" data-key="marker">
                 <img src="images/marker.jpg" alt="Marker" class="item-image orange-border">
                 <div class="item-details">
                     <p class="item-name">MARKER</p>
+                    <label class="field-label">POINTS COST</label>
                     <div class="price-controls">
-    <input type="number" class="price-input" step="0.1" min="0" value="0" disabled>
-</div>
+                        <button type="button" class="arrow-btn" data-dir="down" aria-label="Decrease Marker Price">◀</button>
+                        <input type="number" class="price-input" step="1" min="0" value="0" aria-label="Marker Points Cost" disabled>
+                        <button type="button" class="arrow-btn" data-dir="up" aria-label="Increase Marker Price">▶</button>
+                    </div>
                 </div>
             </div>
 
-            <div class="item-card">
+            <div class="item-card" data-key="yellowpaper">
                 <img src="images/padpaper.jpg" alt="Intermediate Paper" class="item-image yellow-border">
                 <div class="item-details">
                     <p class="item-name">INTERMEDIATE PAPER</p>
+                    <label class="field-label">POINTS COST</label>
                     <div class="price-controls">
-    <input type="number" class="price-input" step="0.1" min="0" value="0" disabled>
-</div>
+                        <button type="button" class="arrow-btn" data-dir="down" aria-label="Decrease Intermediate Paper Price">◀</button>
+                        <input type="number" class="price-input" step="1" min="0" value="0" aria-label="Intermediate Paper Points Cost" disabled>
+                        <button type="button" class="arrow-btn" data-dir="up" aria-label="Increase Intermediate Paper Price">▶</button>
+                    </div>
                 </div>
             </div>
-            
-            <div class="item-card">
+
+            <div class="item-card" data-key="shortbondpaper">
                 <img src="images/bondpaper.png" alt="Short Bond Paper" class="item-image red-border">
                 <div class="item-details">
                     <p class="item-name">SHORT BOND PAPER</p>
+                    <label class="field-label">POINTS COST</label>
                     <div class="price-controls">
-    <input type="number" class="price-input" step="0.1" min="0" value="0" disabled>
-</div>
+                        <button type="button" class="arrow-btn" data-dir="down" aria-label="Decrease Short Bond Paper Price">◀</button>
+                        <input type="number" class="price-input" step="1" min="0" value="0" aria-label="Short Bond Paper Points Cost" disabled>
+                        <button type="button" class="arrow-btn" data-dir="up" aria-label="Increase Short Bond Paper Price">▶</button>
+                    </div>
                 </div>
             </div>
-            
-            
+
         </div>
 
-        <button id="edit" class="edit">EDIT</button>
-         
+        <div id="save-feedback" class="save-feedback" role="status" aria-live="polite"></div>
+
+        <div class="action-buttons">
+            <button id="edit" class="edit">EDIT</button>
+        </div>
+
     </main>
-        
+
 </body>
 </html>

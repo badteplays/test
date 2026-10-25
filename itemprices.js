@@ -13,147 +13,158 @@ const firebaseConfig = {
     databaseURL: "https://stationery-dispenser-default-rtdb.asia-southeast1.firebasedatabase.app"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const auth = getAuth();
+const auth = getAuth(app);
 const db = getDatabase(app);
 
 document.addEventListener('DOMContentLoaded', () => {
     const editBtn = document.getElementById('edit');
     const logoutBtn = document.getElementById('logoutBtn');
     const itemsContainer = document.querySelector('.items-container');
+    const menuButton = document.getElementById('menu-button');
+    const feedbackEl = document.getElementById('save-feedback');
 
-    // --- 1.5. INPUT LENGTH CONSTRAINT (MAX 10 DIGITS) ---
+    function showFeedback(msg, isError = false) {
+        if (!feedbackEl) return;
+        feedbackEl.textContent = msg;
+        feedbackEl.className = 'save-feedback ' + (isError ? 'error' : 'success');
+        setTimeout(() => {
+            if (feedbackEl.textContent === msg) {
+                feedbackEl.textContent = '';
+                feedbackEl.className = 'save-feedback';
+            }
+        }, 3500);
+    }
+
+    // --- 1.5. INPUT LENGTH CONSTRAINT (MAX 10 DIGITS, WHOLE NUMBERS) ---
     const inputs = document.querySelectorAll('.price-input');
-    inputs.forEach(input => {
-        // Blocks typing beyond 10 digits
+    inputs.forEach((input) => {
         input.addEventListener('keydown', (e) => {
-            // Allow control keys (Backspace, Delete, Arrows, Tab, etc.)
-            const isControlKey = e.key === 'Backspace' || e.key === 'Delete' || 
-                                 e.key === 'ArrowLeft' || e.key === 'ArrowRight' || 
+            if (e.key === '.' || e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') {
+                e.preventDefault();
+                return;
+            }
+            const isControlKey = e.key === 'Backspace' || e.key === 'Delete' ||
+                                 e.key === 'ArrowLeft' || e.key === 'ArrowRight' ||
+                                 e.key === 'ArrowUp' || e.key === 'ArrowDown' ||
                                  e.key === 'Tab';
-            
             if (!isControlKey && input.value.length >= 10) {
-                e.preventDefault(); // Stop the key press instantly
+                e.preventDefault();
             }
         });
 
-        // Catch sneaky inputs (pasting long numbers, drag-and-drop text)
         input.addEventListener('input', (e) => {
-            if (e.target.value.length > 10) {
-                e.target.value = e.target.value.slice(0, 10);
-            }
+            e.target.value = e.target.value.replace(/\D/g, '').slice(0, 10);
         });
     });
 
-    // --- 2. LOAD DATA FROM FIREBASE (The "Pull") ---
+    // --- 2. LOAD PRICES FROM FIREBASE ---
     const pricesRef = ref(db, 'inventory/');
-
     onValue(pricesRef, (snapshot) => {
         const data = snapshot.val();
         if (data) {
-            console.log("Data received from Firebase:", data);
-            // Pass values directly to UI updater
             updateUI('PEN', data.pen);
             updateUI('MARKER', data.marker);
             updateUI('INTERMEDIATE PAPER', data.yellowpaper);
             updateUI('SHORT BOND PAPER', data.shortbondpaper);
         }
     }, (error) => {
-        console.error("Error fetching data:", error);
+        console.error("Error fetching prices:", error);
     });
 
-    // Updates the screen using clean whole numbers
     function updateUI(itemName, value) {
-        document.querySelectorAll('.item-card').forEach(card => {
+        document.querySelectorAll('.item-card').forEach((card) => {
             const nameOnPage = card.querySelector('.item-name').innerText.trim().toUpperCase().replace(/\n/g, ' ');
             if (nameOnPage === itemName) {
-                // CHANGED: Used parseInt to completely drop decimals
-                card.querySelector('.price-input').value = parseInt(value, 10) || 0;
+                const parsed = parseInt(value, 10) || 0;
+                const input = card.querySelector('.price-input');
+                if (input) input.value = parsed;
+                updateArrowVisuals(card, parsed);
             }
         });
     }
 
-    const menuButton = document.getElementById('menu-button');
-    menuButton.addEventListener('click', function () {
-        window.location.href = 'menu.html';
-    });
+    if (menuButton) {
+        menuButton.addEventListener('click', () => {
+            window.location.href = 'menu.html';
+        });
+    }
 
     // --- 3. EDIT / DONE TOGGLE & SAVE ---
-    editBtn.addEventListener('click', () => {
-        const isEditing = editBtn.textContent === 'EDIT';
-        const inputs = document.querySelectorAll('.price-input');
+    if (editBtn) {
+        editBtn.addEventListener('click', () => {
+            const isEditing = editBtn.textContent === 'EDIT';
+            const allInputs = document.querySelectorAll('.price-input');
 
-        if (!isEditing) {
-            // Saving data
-            // CHANGED: Reading values strictly as Integers
-            const penPrice = parseInt(findPriceInHTML('PEN'), 10);
-            const markerPrice = parseInt(findPriceInHTML('MARKER'), 10);
-            const paperPrice = parseInt(findPriceInHTML('INTERMEDIATE PAPER'), 10);
-            const shortbondpaperPrice = parseInt(findPriceInHTML('SHORT BOND PAPER'), 10);
+            if (!isEditing) {
+                const penPrice = findValueInHTML('PEN', '.price-input', 10);
+                const markerPrice = findValueInHTML('MARKER', '.price-input', 10);
+                const paperPrice = findValueInHTML('INTERMEDIATE PAPER', '.price-input', 10);
+                const shortbondpaperPrice = findValueInHTML('SHORT BOND PAPER', '.price-input', 10);
 
-            set(ref(db, 'inventory/'), {
-                pen: penPrice,
-                marker: markerPrice,
-                yellowpaper: paperPrice,
-                shortbondpaper: shortbondpaperPrice
-            }).then(() => {
-                console.log("Success: Prices synced!");
+                set(ref(db, 'inventory/'), {
+                    pen: penPrice,
+                    marker: markerPrice,
+                    yellowpaper: paperPrice,
+                    shortbondpaper: shortbondpaperPrice
+                }).then(() => {
+                    showFeedback("✓ Item prices saved to Firebase!", false);
+                }).catch((err) => {
+                    showFeedback("Failed to save: " + err.message, true);
+                });
+            }
+
+            allInputs.forEach((input) => {
+                input.disabled = !isEditing;
             });
-        }
 
-        // Toggle input disabled state
-        inputs.forEach(input => {
-            input.disabled = !isEditing; 
+            document.querySelectorAll('.arrow-btn').forEach((arrow) => {
+                arrow.classList.toggle('green', isEditing);
+            });
+
+            editBtn.textContent = isEditing ? 'DONE' : 'EDIT';
         });
+    }
 
-        editBtn.textContent = isEditing ? 'DONE' : 'EDIT';
-    });
-
-    // Helper to scrape the current number from the HTML elements
-    function findPriceInHTML(itemName) {
-        let price = 100;
-        document.querySelectorAll('.item-card').forEach(card => {
+    function findValueInHTML(itemName, selector, fallback = 0) {
+        let val = fallback;
+        document.querySelectorAll('.item-card').forEach((card) => {
             const nameOnPage = card.querySelector('.item-name').innerText.trim().toUpperCase().replace(/\n/g, ' ');
             if (nameOnPage === itemName) {
-                price = card.querySelector('.price-input').value;
+                const input = card.querySelector(selector);
+                if (input) val = input.value;
             }
         });
-        // CHANGED: Parsing the return value strictly as a base-10 integer
-        return parseInt(price, 10) || 0;
+        return parseInt(val, 10) || 0;
     }
 
     // --- 4. ARROW CLICK LOGIC ---
-    itemsContainer.addEventListener('click', (e) => {
-        const button = e.target;
-        if (!button.classList.contains('arrow-btn')) return;
+    if (itemsContainer) {
+        itemsContainer.addEventListener('click', (e) => {
+            const button = e.target.closest('.arrow-btn');
+            if (!button) return;
+            if (editBtn && editBtn.textContent === 'EDIT') return;
 
-        if (editBtn.textContent === 'EDIT') return;
+            const card = button.closest('.item-card');
+            const priceInput = card.querySelector('.price-input');
+            let currentPrice = parseInt(priceInput.value, 10) || 0;
 
-        const card = button.closest('.item-card');
-        
-        // CHANGED: Target '.price-input' directly so arrow modifications alter the correct field
-        const priceInput = card.querySelector('.price-input');
-        let currentPrice = parseInt(priceInput.value, 10) || 0;
+            const direction = button.getAttribute('data-dir');
+            if (direction === 'up') {
+                currentPrice++;
+            } else if (direction === 'down') {
+                if (currentPrice > 0) currentPrice--;
+            }
 
-        const direction = button.getAttribute('data-dir'); 
+            priceInput.value = currentPrice;
+            updateArrowVisuals(card, currentPrice);
+        });
+    }
 
-        if (direction === 'up') {
-            currentPrice++;
-        } else if (direction === 'down') {
-            if (currentPrice > 0) currentPrice--;
-        }
-
-        // CHANGED: Writing directly back to the input element
-        priceInput.value = currentPrice;
-        updateArrowVisuals(card, currentPrice);
-    });
-
-    // Handles the grayed-out look for the left arrow at minimum value
     function updateArrowVisuals(card, price) {
         const leftArrow = card.querySelector('.arrow-btn:first-of-type');
         if (!leftArrow) return;
-        if (price <= 1) {
+        if (price <= 0) {
             leftArrow.style.opacity = "0.5";
             leftArrow.style.cursor = "not-allowed";
         } else {
@@ -163,14 +174,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- 5. LOGOUT ---
-    logoutBtn.addEventListener('click', () => {
-        signOut(auth).then(() => {
-            window.location.replace("login.html");
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            localStorage.removeItem('supplify_admin_session');
+            signOut(auth).then(() => {
+                window.location.replace("login.html");
+            }).catch(() => {
+                window.location.replace("login.html");
+            });
         });
-    });
+    }
 });
 
-// --- 6. ROUTE GUARD (Redirects if not logged in) ---
+// --- 6. SESSION CHECK ---
 onAuthStateChanged(auth, (user) => {
     if (user) {
         console.log("Admin logged in as:", user.email);

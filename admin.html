@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Accounts</title>
+    <title>Admin Dashboard - Supplify Stationery Dispenser</title>
     <link rel="stylesheet" href="admin.css">
     <script type="module" src="admin.js"></script>
 </head>
@@ -17,6 +17,7 @@
         </button>
 
         <nav class="top-nav">
+            <span id="syncStatus" class="status-circle gray" title="Dispenser Sync Status"></span>
             <span class="admin-label">ADMIN |</span>
             <button id="logoutBtn" class="logout-btn">LOGOUT</button>
         </nav>
@@ -24,32 +25,70 @@
 
     <main class="content-wrapper">
         <h1 class="page-title">ADMIN</h1>
+
+        <section class="summary-bar" aria-label="Dispenser Status Summary">
+            <div class="summary-card">
+                <span class="summary-label">TOTAL ACCOUNTS</span>
+                <span id="stat-accounts" class="summary-value">-</span>
+            </div>
+            <div class="summary-card">
+                <span class="summary-label">ITEM PRICES (P/M/IP/BP)</span>
+                <span id="stat-prices" class="summary-value">-</span>
+            </div>
+            <div class="summary-card">
+                <span class="summary-label">TOTAL TRANSACTIONS</span>
+                <span id="stat-transactions" class="summary-value">-</span>
+            </div>
+            <div class="summary-card">
+                <span class="summary-label">BOTTLE PTS (1L/500/350)</span>
+                <span id="stat-bottles" class="summary-value">-</span>
+            </div>
+        </section>
+
+        <div class="admin-controls">
+            <input type="search" id="admin-search" class="search-input" placeholder="Search UID, Name, or Notification..." aria-label="Search UID or Notification">
+            <div class="notif-actions">
+                <input type="text" id="new-notif-input" class="notif-input" placeholder="Post admin notice / alert..." aria-label="New notification message">
+                <button type="button" id="add-notif-btn" class="action-btn">+ ADD NOTIF</button>
+                <button type="button" id="export-admin-btn" class="action-btn secondary-btn">EXPORT CSV</button>
+            </div>
+        </div>
+
         <div class="tables">
             <div class="accounts-container">
-                <table id="accounts-table">
-                    <thead>
-                        <tr>
-                            <th>UID</th>
-                            <th>DATE</th>
-                            <th>TIME</th>
-                        </tr>
-                    </thead>
-                    <tbody id="table-body">
-                    </tbody>
-                </table>
+                <h2 class="section-subtitle" id="uid-table-heading">RECENT RFID / USER ACTIVITY</h2>
+                <div tabindex="0" role="region" aria-labelledby="uid-table-heading" class="table-wrapper">
+                    <table id="uid-table" class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>UID</th>
+                                <th>DATE</th>
+                                <th>TIME</th>
+                            </tr>
+                        </thead>
+                        <tbody id="uid-table-body">
+                            <tr><td colspan="3">Loading activity...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
+
             <div class="accounts-container">
-                <table id="accounts-table">
-                    <thead>
-                        <tr>
-                            <th>NOTIFS</th>
-                            <th>DATE</th>
-                            <th>TIME</th>
-                        </tr>
-                    </thead>
-                    <tbody id="table-body">
-                    </tbody>
-                </table>
+                <h2 class="section-subtitle" id="notifs-table-heading">SYSTEM NOTIFICATIONS &amp; ALERTS</h2>
+                <div tabindex="0" role="region" aria-labelledby="notifs-table-heading" class="table-wrapper">
+                    <table id="notifs-table" class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>NOTIFS</th>
+                                <th>DATE</th>
+                                <th>TIME</th>
+                            </tr>
+                        </thead>
+                        <tbody id="notifs-table-body">
+                            <tr><td colspan="3">Loading notifications...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </main>

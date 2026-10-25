@@ -3,16 +3,28 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Arial', sans-serif; /* You can use 'Montserrat' for a closer match */
+    font-family: 'Arial', sans-serif;
 }
 
 body {
-    height: 100vh;
+    min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    /* Replace .jpg with the actual extension of your file */
     background: #1a1a2e url('images/background.jpg') no-repeat center center/cover;
+    padding: 20px;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 }
 
 .login-container {
@@ -26,7 +38,8 @@ body {
 .header-box {
     border: 3px solid white;
     padding: 20px;
-    margin-bottom: 50px;
+    margin-bottom: 40px;
+    background: rgba(0, 0, 0, 0.45);
 }
 
 .header-box h1 {
@@ -40,29 +53,83 @@ body {
 .login-form {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 18px;
+    align-items: center;
+}
+
+.input-group {
+    position: relative;
+    width: 100%;
+    max-width: 350px;
+    display: flex;
     align-items: center;
 }
 
 input {
-    width: 350px;
+    width: 100%;
     padding: 12px 15px;
-    border: none;
+    border: 2px solid transparent;
     font-weight: bold;
     color: #000000;
+    background-color: #ffffff;
     font-size: 1rem;
     outline: none;
 }
 
+.password-group input {
+    padding-right: 70px;
+}
+
+.toggle-password-btn {
+    position: absolute;
+    right: 8px;
+    background: #000;
+    color: #fff;
+    border: 1px solid #fff;
+    padding: 5px 10px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.toggle-password-btn:hover {
+    background: #333;
+}
+
 input::placeholder {
-    color: #bbb;
+    color: #888;
+}
+
+input:focus {
+    color: black;
+    border-color: #00ff88;
+}
+
+.form-feedback {
+    min-height: 22px;
+    font-size: 0.95rem;
+    font-weight: bold;
+    padding: 4px 10px;
+    border-radius: 4px;
+}
+
+.form-feedback.error {
+    color: #ffdddd;
+    background: rgba(180, 0, 0, 0.75);
+    border: 1px solid #ff4d4d;
+}
+
+.form-feedback.success {
+    color: #00ff88;
+    background: rgba(0, 0, 0, 0.75);
+    border: 1px solid #00ff88;
 }
 
 /* Login Button */
 .login-btn {
-    margin-top: 10px;
-    width: 150px;
-    padding: 10px;
+    margin-top: 5px;
+    min-width: 160px;
+    padding: 10px 20px;
     background-color: black;
     color: white;
     border: 3px solid white;
@@ -72,46 +139,71 @@ input::placeholder {
     transition: 0.3s;
 }
 
-.login-btn:hover {
+.login-btn:hover:not(:disabled) {
     background-color: white;
     color: black;
 }
 
-input:focus {
-    color: black;
+.login-btn:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+.auth-links {
+    margin-top: 8px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 8px 16px;
+    border-radius: 6px;
+}
+
+.auth-links a {
+    color: #ffffff;
+    text-decoration: underline;
+    font-weight: bold;
+}
+
+.auth-links a:hover {
+    color: #00ff88;
+}
+
+.auth-links span {
+    color: #aaa;
 }
 
 @media screen and (max-width: 700px) {
     body {
-        /* Switch to the mobile background file */
         background: #1a1a2e url('images/mobile-background.jpg') no-repeat center center/cover;
     }
 
     .login-container {
-        width: 90%; /* Take up more width on small screens */
+        width: 95%;
     }
 
     .header-box {
         padding: 15px 10px;
-        margin-bottom: 40px; /* Adjust spacing to match the image */
+        margin-bottom: 30px;
     }
 
     .header-box h1 {
-        font-size: 1.2rem; /* Slightly smaller text for mobile frames */
+        font-size: 1.2rem;
+    }
+
+    .input-group {
+        max-width: 280px;
     }
 
     input {
-        width: 100%; /* Inputs now fill the container width */
-        max-width: 280px; /* Matches the narrow mobile look */
         padding: 10px;
         color: #000000;
     }
 
     .login-btn {
-        width: 120px;
+        min-width: 130px;
         font-size: 1rem;
     }
-    input:focus {
-    color: black;
-}
 }

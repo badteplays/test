@@ -15,118 +15,169 @@ const firebaseConfig = {
 
 // --- 2. INITIALIZATION ---
 const app = initializeApp(firebaseConfig);
-const auth = getAuth();
+const auth = getAuth(app);
 const db = getDatabase(app);
+
+function formatDateDisplay(dateStr) {
+    if (!dateStr) return 'N/A';
+    const dateParts = dateStr.split('/');
+    if (dateParts.length === 3) {
+        return `${dateParts[1].padStart(2, '0')}/${dateParts[0].padStart(2, '0')}/${dateParts[2]}`;
+    }
+    return dateStr;
+}
+
+function normalizeForSort(dateStr, timeStr) {
+    if (!dateStr) return "0000-00-00T00:00:00";
+    if (dateStr.includes('/')) {
+        const parts = dateStr.split('/');
+        if (parts.length < 3) return "0000-00-00T00:00:00";
+        const day = parts[0].padStart(2, '0');
+        const month = parts[1].padStart(2, '0');
+        const year = parts[2];
+        const time = (timeStr || '00:00:00').padStart(8, '0');
+        return `${year}-${month}-${day}T${time}`;
+    }
+    return `${dateStr}T${timeStr || '00:00:00'}`;
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     const logoutBtn = document.getElementById('logoutBtn');
     const tableBody = document.getElementById('table-body');
     const menuButton = document.getElementById('menu-button');
+    const searchInput = document.getElementById('history-search');
+    const exportBtn = document.getElementById('export-csv-btn');
 
-    // Navigation logic
     if (menuButton) {
         menuButton.addEventListener('click', () => {
             window.location.href = 'menu.html';
         });
     }
 
-    // Logout logic
     if (logoutBtn) {
         logoutBtn.addEventListener('click', () => {
+            localStorage.removeItem('supplify_admin_session');
             signOut(auth).then(() => {
+                window.location.replace("login.html");
+            }).catch(() => {
                 window.location.replace("login.html");
             });
         });
     }
 
-    // --- 3. LOAD, MERGE & DE-DUPLICATE ---
-    const dbRef = ref(db);
+    // --- 3. LOAD ONLY loginHistory AND offlineLogs (NOT FULL DB ROOT) ---
+    let onlineLogs = null;
+    let offlineLogs = null;
+    let currentFiltered = [];
 
-    onValue(dbRef, (snapshot) => {
-        const data = snapshot.val();
-        
-        if (!data) {
-            tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No data available.</td></tr>';
-            return;
-        }
-
+    const renderLogs = () => {
+        if (!tableBody) return;
         tableBody.innerHTML = '';
 
-        // Using a Map to handle merging and duplicate prevention
-        let logsMap = new Map();
+        const logsMap = new Map();
 
-        // Helper to process log groups
         const processLogs = (logGroup, isOffline) => {
-            if (!logGroup) return;
-            Object.keys(logGroup).forEach(key => {
+            if (!logGroup || typeof logGroup !== 'object') return;
+            Object.keys(logGroup).forEach((key) => {
                 const entry = logGroup[key];
+                if (!entry || typeof entry !== 'object') return;
                 const fingerprint = `${entry.uid}-${entry.date}-${entry.time}`;
                 logsMap.set(fingerprint, { ...entry, isOffline });
             });
         };
 
-        // Process both standard and offline logs into the same Map
-        processLogs(data.loginHistory, false);
-        processLogs(data.offlineLogs, true);
+        processLogs(onlineLogs, false);
+        processLogs(offlineLogs, true);
 
-        // Convert Map values to an array for sorting and display
-        let combinedLogs = Array.from(logsMap.values());
+        const combinedLogs = Array.from(logsMap.values());
+        combinedLogs.sort((a, b) => {
+            const isoA = normalizeForSort(a.date, a.time);
+            const isoB = normalizeForSort(b.date, b.time);
+            return isoB.localeCompare(isoA);
+        });
 
-        if (combinedLogs.length > 0) {
-            // --- 4. FIXED SORTING LOGIC (Latest on Top) ---
-            combinedLogs.sort((a, b) => {
-                const normalizeForSort = (dateStr, timeStr) => {
-                    if (!dateStr) return "0000-00-00T00:00:00";
-                    const parts = dateStr.split('/');
-                    if (parts.length < 3) return "0000-00-00T00:00:00";
-                    
-                    const day = parts[0].padStart(2, '0');   
-                    const month = parts[1].padStart(2, '0'); 
-                    const year = parts[2];
-                    const time = timeStr || '00:00:00';
-                    
-                    // Returns standard string format: "YYYY-MM-DDTHH:mm:ss"
-                    return `${year}-${month}-${day}T${time}`;
-                };
+        const query = (searchInput ? searchInput.value : '').trim().toLowerCase();
+        currentFiltered = combinedLogs.filter((entry) => {
+            if (!query) return true;
+            const name = String(entry.name || 'Unknown').toLowerCase();
+            const uid = String(entry.uid || 'N/A').toLowerCase();
+            const rawDate = String(entry.date || '').toLowerCase();
+            const dispDate = formatDateDisplay(entry.date).toLowerCase();
+            return name.includes(query) || uid.includes(query) || rawDate.includes(query) || dispDate.includes(query);
+        });
 
-                const isoA = normalizeForSort(a.date, a.time);
-                const isoB = normalizeForSort(b.date, b.time);
-                
-                // Direct chronological string comparison (Z to A order for newest first)
-                return isoB.localeCompare(isoA);
-            });
-
-            // --- 5. RENDER TABLE ---
-            combinedLogs.forEach(entry => {
+        if (currentFiltered.length > 0) {
+            currentFiltered.forEach((entry) => {
                 const tr = document.createElement('tr');
-                const textStyle = entry.isOffline ? 'color: #ff0000; font-weight: bold;' : 'color: inherit;';
-
-                // Date Formatting (DD/MM/YYYY to MM/DD/YYYY for display)
-                let dateDisplay = 'N/A';
-                if (entry.date) {
-                    const dateParts = entry.date.split('/');
-                    if (dateParts.length === 3) {
-                        dateDisplay = `${dateParts[1].padStart(2, '0')}/${dateParts[0].padStart(2, '0')}/${dateParts[2]}`;
-                    }
+                if (entry.isOffline) {
+                    tr.style.color = '#ff0000';
+                    tr.style.fontWeight = 'bold';
                 }
 
-                const timeDisplay = entry.time ? entry.time : '-';
+                const tdName = document.createElement('td');
+                tdName.textContent = `${entry.name || 'Unknown'}${entry.isOffline ? ' (Offline)' : ''}`;
 
-                tr.innerHTML = `
-                    <td style="${textStyle}">${entry.name || 'Unknown'} ${entry.isOffline ? '(Offline)' : ''}</td>
-                    <td style="${textStyle}">${entry.uid || 'N/A'}</td>
-                    <td style="${textStyle}">${dateDisplay}</td>
-                    <td style="${textStyle}">${timeDisplay}</td>
-                `;
+                const tdUid = document.createElement('td');
+                tdUid.textContent = entry.uid || 'N/A';
+
+                const tdDate = document.createElement('td');
+                tdDate.textContent = formatDateDisplay(entry.date);
+
+                const tdTime = document.createElement('td');
+                tdTime.textContent = entry.time || '-';
+
+                tr.append(tdName, tdUid, tdDate, tdTime);
                 tableBody.appendChild(tr);
             });
         } else {
-            tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No login history found.</td></tr>';
+            const tr = document.createElement('tr');
+            const td = document.createElement('td');
+            td.colSpan = 4;
+            td.style.textAlign = 'center';
+            td.style.padding = '20px';
+            td.textContent = 'No login history found.';
+            tr.appendChild(td);
+            tableBody.appendChild(tr);
         }
+    };
+
+    onValue(ref(db, 'loginHistory'), (snapshot) => {
+        onlineLogs = snapshot.val();
+        renderLogs();
     });
+
+    onValue(ref(db, 'offlineLogs'), (snapshot) => {
+        offlineLogs = snapshot.val();
+        renderLogs();
+    });
+
+    if (searchInput) {
+        searchInput.addEventListener('input', renderLogs);
+    }
+
+    if (exportBtn) {
+        exportBtn.addEventListener('click', () => {
+            const lines = ['Name,UID,Date,Time,Mode'];
+            currentFiltered.forEach((entry) => {
+                const name = String(entry.name || 'Unknown').replace(/"/g, '""');
+                const uid = String(entry.uid || 'N/A').replace(/"/g, '""');
+                const date = formatDateDisplay(entry.date);
+                const time = entry.time || '-';
+                const mode = entry.isOffline ? 'Offline' : 'Online';
+                lines.push(`"${name}","${uid}","${date}","${time}","${mode}"`);
+            });
+            const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'supplify_login_history.csv';
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+    }
 });
 
-// Auth Guard
+// Session Check
 onAuthStateChanged(auth, (user) => {
     if (user) console.log("Admin Session Active");
 });

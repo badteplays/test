@@ -8,7 +8,6 @@ body {
     overflow-y: auto;
 }
 
-
 .top-nav {
     position: absolute;
     top: 20px;
@@ -33,61 +32,41 @@ body {
     font-size: 1.2rem;
     cursor: pointer;
     box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.5);
-    /* Adds that slight depth seen in image */
 }
 
-#sync-display-box {
-    background: black; 
-    color: #00ff88; 
-    padding: 10px; 
-    border-radius: 5px; 
-    font-family: monospace; 
-    font-size: 12px; 
-    min-width: 250px; 
-    min-height: 50px; 
-    border: 1px solid #333;
+.logout-btn:hover,
+.menu-button:hover {
+    background: white;
+    color: black;
 }
+
+.status-circle {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    transition: background-color 0.3s ease;
+    border: 2px solid white;
+    display: inline-block;
+}
+
+.gray { background-color: #888888; }
+.green { background-color: #00ff88; box-shadow: 0 0 10px #00ff88; }
+.red { background-color: #ff4d4d; box-shadow: 0 0 10px #ff4d4d; }
 
 .content-wrapper {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding-top: 60px;
-    padding-bottom: 60px;
+    padding: 60px 20px 60px;
     min-height: 100%;
-    gap: 20px;
+    gap: 18px;
+    box-sizing: border-box;
 }
 
 .page-title {
     font-size: 2.5rem;
     letter-spacing: 3px;
-    margin-bottom: 20px;
-}
-
-.edit-button {
-    display: flex;
-    /* This pushes the button to the far right of the div */
-    justify-content: flex-end;
-
-    /* Matches the width of your blue box so the right edges line up */
-    width: 100%;
-    max-width: 1050px;
-    margin: 0 auto;
-    /* Centers the wrapper itself on the screen */
-}
-
-/* Blue Item Box */
-.items-container {
-    background-color: #40f8a1;
-    border: 4px solid white;
-    display: flex;
-    justify-content: space-around;
-    padding: 40px 20px;
-    width: 80%;
-    max-width: 800px;
-    margin-bottom: 20px;
-    /* Space between box and Edit button */
-    
+    margin-bottom: 5px;
 }
 
 .menu-button {
@@ -99,24 +78,195 @@ body {
     color: white;
     border: 4px solid white;
     padding: 8px 15px;
-    /* Wider padding for the word "MENU" */
     font-weight: bold;
     font-size: 1.2rem;
     cursor: pointer;
 }
 
-
-
-
-/* Hide the hamburger icon by default (on Desktop) */
 .menu-icon {
     display: none;
 }
 
+/* Add New User Form */
+.new-user {
+    padding: 15px 20px;
+    background: rgba(0, 0, 0, 0.85);
+    border: 3px solid white;
+    width: 90%;
+    max-width: 900px;
+    box-sizing: border-box;
+}
+
+.new-user-title {
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #40f8a1;
+}
+
+.add-account-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
+.add-account-form input {
+    padding: 8px 10px;
+    font-size: 0.95rem;
+    border: 2px solid #ccc;
+    flex: 1;
+    min-width: 140px;
+}
+
+.add-user-btn {
+    background: #00ff88;
+    color: black;
+    font-weight: bold;
+    padding: 9px 18px;
+    border: 2px solid white;
+    cursor: pointer;
+}
+
+.add-user-btn:hover {
+    background: white;
+}
+
+.account-feedback {
+    margin-top: 8px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    min-height: 18px;
+}
+
+.account-feedback.error {
+    color: #ff6b6b;
+}
+
+.account-feedback.success {
+    color: #00ff88;
+}
+
+/* Sync Section */
+.sync-section {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    width: 90%;
+    max-width: 900px;
+}
+
+#syncBtn {
+    background: #007bff;
+    color: white;
+    font-weight: bold;
+    padding: 12px 22px;
+    cursor: pointer;
+    border: 3px solid white;
+    font-size: 1rem;
+}
+
+#syncBtn:hover:not(:disabled) {
+    background: #0056b3;
+}
+
+#sync-display-box {
+    background: black;
+    color: #00ff88;
+    padding: 10px 14px;
+    border-radius: 5px;
+    font-family: monospace;
+    font-size: 12px;
+    min-width: 260px;
+    min-height: 50px;
+    border: 2px solid #555;
+    flex: 1;
+}
+
+/* Search & Export Bar */
+.table-controls {
+    display: flex;
+    gap: 12px;
+    width: 90%;
+    max-width: 900px;
+    justify-content: space-between;
+}
+
+.search-input {
+    flex: 1;
+    padding: 9px 12px;
+    font-size: 0.95rem;
+    font-weight: bold;
+    border: 2px solid white;
+}
+
+.export-btn {
+    background: black;
+    color: white;
+    border: 3px solid white;
+    padding: 8px 16px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.export-btn:hover {
+    background: white;
+    color: black;
+}
+
+/* Accounts Table */
+.accounts-container {
+    width: 90%;
+    max-width: 900px;
+    margin: 0 auto 50px;
+    text-align: center;
+}
+
+.table-wrapper {
+    overflow: auto;
+    max-inline-size: 100%;
+    max-block-size: min(520px, 70vh);
+    container-type: inline-size;
+    border: 3px solid white;
+}
+
+#accounts-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    color: rgb(0, 0, 0);
+    font-family: sans-serif;
+    background-color: #40f8a1;
+    text-align: center;
+}
+
+#accounts-table thead {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 1;
+}
+
+#accounts-table th {
+    background-color: #000000;
+    color: rgb(255, 255, 255);
+    padding: 12px 8px;
+    text-align: center;
+}
+
+#accounts-table td {
+    padding: 10px 8px;
+    border-bottom: 1px solid #333;
+}
+
+#accounts-table tr:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
 
 .edit-action-btn {
     background-color: #00ff88;
-    border: none;
+    color: black;
+    border: 1px solid #000;
     padding: 5px 10px;
     margin: 2px;
     cursor: pointer;
@@ -124,101 +274,17 @@ body {
     border-radius: 4px;
 }
 
-
-#accounts-table {
-    width: 100%;
-    border-collapse: collapse;
-    color: rgb(0, 0, 0);
-    /* Text color */
-    font-family: sans-serif;
-    background-color: #40f8a1;
-    text-align: center;
+.edit-action-btn.delete-btn {
+    background-color: #ff4d4d;
+    color: white;
+    border: 1px solid darkred;
 }
 
-#accounts-table th {
-    background-color: #000000;
-    /* Matches your UI accent color */
-    color: rgb(255, 255, 255);
-    padding: 12px;
-    text-align: center;
+.edit-action-btn:hover {
+    opacity: 0.85;
 }
 
-#accounts-table td {
-    padding: 10px;
-    border-bottom: 1px solid #444;
-}
-
-#accounts-table tr:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    /* Subtle hover effect */
-}
-
-.add-account-form {
-        display: flex;
-        flex-direction: row;
-        gap: 10px;
-        padding: 10px;
-    }
-
-.new-user {
-    padding: 10px;
-    background: #000;
-    border: 1px solid white;
-}
-
-.accounts-container {
-  padding-bottom:50px;
-  margin-inline: 50px;
-}
-
-.sync-section {
-    display: flex;
-    flex-direction: row;
-    margin-inline: 50px;
-    gap: 30px;
-}
-
-#syncBtn {
-     background: #007bff; 
-     color: white; 
-     font-weight: bold; 
-     padding: 10px 20px; cursor: pointer; 
-     border: 3px solid white;
-}
-
-   /* Column Widths - Keeps everything aligned */
-    #accounts-table th:nth-child(1),
-    #accounts-table td:nth-child(1) {
-        width: 50%;
-        border-right: 1px solid #000000;
-    }
-
-    /* UID */
-    #accounts-table th:nth-child(3),
-    #accounts-table td:nth-child(3) {
-        width: 50%;
-    }
-
-
-    /* Pts */
-    #accounts-table th:nth-child(5),
-    #accounts-table td:nth-child(5) {
-        width: 50%;
-    }
-
-    .accounts-container {
-    padding-bottom: 50px;
-    margin-inline: 50px;
-    width: 80%;            /* Forces the section to span across the desktop */
-    max-width: 800px;      /* Matches the clean look of your items-container */
-    margin: 0 auto 50px;   /* Centers it perfectly on the screen */
-    text-align: center;
-}
-
-/*  EDIT TS */
 @media screen and (max-width: 700px) {
-
-    /* 1. Global Page Setup - Allow scrolling and fix background */
     body {
         display: flex;
         flex-direction: column;
@@ -230,102 +296,6 @@ body {
         padding-bottom: 20px;
     }
 
-    /* 2. The Floating Container - Creates space on the sides */
-    .items-container {
-        background-color: #40f8a1;
-        border: 4px solid white;
-        width: 92%;
-        /* Side margins */
-        max-width: 380px;
-        /* Keeps it compact */
-        margin: 10px auto;
-        /* Centers the box */
-        padding: 5px;
-        /* Tight internal space */
-        box-sizing: border-box;
-        overflow-x: hidden;
-        border-radius: 8px;
-        box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.3);
-    }
-
-    /* 3. Table Compression - Removes the "Excess" height and width */
-    #accounts-table {
-        width: 100%;
-        font-size: 0.4rem;
-        /* Smaller text to fit columns */
-        border-collapse: collapse;
-        table-layout: fixed;
-        /* CRITICAL: Prevents table from stretching wide */
-    }
-
-    /* Column Widths - Keeps everything aligned */
-    #accounts-table th:nth-child(1),
-    #accounts-table td:nth-child(1) {
-        width: 50%;
-    }
-
-    /* UID */
-    #accounts-table th:nth-child(3),
-    #accounts-table td:nth-child(3) {
-        width: 50%;
-    }
-
-
-    /* Pts */
-    #accounts-table th:nth-child(5),
-    #accounts-table td:nth-child(5) {
-        width: 50%;
-    }
-
-    /* Actions */
-
-    /* Cell Spacing - The "Anti-Excess" fix */
-    #accounts-table th {
-        background-color: #000;
-        color: #fff;
-        padding: 1px 2px;
-        text-align: center;
-        text-transform: uppercase;
-        letter-spacing: 0px;
-    }
-
-    #accounts-table td {
-        padding: 6px 2px;
-        /* Reduced vertical padding */
-        text-align: center;
-        white-space: normal;
-        /* Allows text wrapping */
-        word-break: break-all;
-        /* Breaks long UIDs so they don't push the border */
-        vertical-align: middle;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-        color: #000;
-        font-weight: 500;
-        font-size: 7px;
-    }
-
-    /* 4. Action Buttons - Stacked vertically to keep columns thin */
-    .edit-action-btn {
-        display: block;
-        /* Put buttons on top of each other */
-        width: 95%;
-        margin: 2px auto;
-        /* Very close together */
-        font-size: 0.5rem;
-        padding: 3px 0;
-        text-align: center;
-        background-color: #00ff88;
-        border: 1px solid rgba(0, 0, 0, 0.2);
-        border-radius: 3px;
-        font-weight: bold;
-        cursor: pointer;
-    }
-
-    .accounts-container {
-        padding: 10px;
-    }
-
-    /* 5. Header & Navigation Adjustments */
     .menu-button {
         padding: 5px 10px;
         border-width: 3px;
@@ -334,10 +304,11 @@ body {
 
     .top-nav {
         gap: 8px;
+        right: 12px;
     }
 
     .admin-label {
-        font-size: 0.6rem;
+        font-size: 0.7rem;
     }
 
     .logout-btn {
@@ -346,62 +317,53 @@ body {
         border-width: 3px;
     }
 
-
-    /* 3. Centered and Smaller Title */
     .page-title {
         font-size: 1.8rem;
-        /* Scaled down */
         text-align: center;
-        margin: 20px 0;
-        width: 100%;
-        letter-spacing: 2px;
+        margin: 20px 0 5px;
     }
 
     .add-account-form {
-        display: flex;
         flex-direction: column;
-        padding: 10px;
-        margin-bottom: 20px;
-        
+        align-items: stretch;
     }
 
-    .new-user {
-        background: #000;
-        border: 1px solid white;
-        padding: 5px;
-    }
-
-.content-wrapper {
-height:auto;
-padding-bottom:100px;
-}
-
-.items-container{
-overflow:visible;
-height:auto;
-}
-
-.sync-section {
-        display: flex;
-        flex-direction: column; /* Stacks button and black box vertically */
-        align-items: center;    /* Centers them horizontally in the column */
-        gap: 15px;              /* Adds spacing between the button and box */
-        margin: 20px;
+    .sync-section {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
     }
 
     #sync-display-box {
-        width: 80%;             /* Makes the box wider to fit mobile screens */
-        min-width: unset;       /* Removes the desktop min-width restriction */
+        min-width: unset;
     }
 
+    #accounts-table {
+        font-size: 0.7rem;
+        table-layout: fixed;
+    }
 
-    #syncBtn {
-        background: #007bff; 
-        color: white; 
-        font-weight: bold; 
-        padding: 29px 2px; 
-        cursor: pointer; 
-        border: 3px solid white;
-        font-size: 9px;    
+    #accounts-table th:nth-child(1),
+    #accounts-table td:nth-child(1) { width: 22%; }
+    #accounts-table th:nth-child(2),
+    #accounts-table td:nth-child(2) { width: 20%; word-break: break-all; }
+    #accounts-table th:nth-child(3),
+    #accounts-table td:nth-child(3) { width: 15%; }
+    #accounts-table th:nth-child(4),
+    #accounts-table td:nth-child(4) { width: 16%; word-break: break-all; }
+    #accounts-table th:nth-child(5),
+    #accounts-table td:nth-child(5) { width: 27%; }
+
+    #accounts-table th,
+    #accounts-table td {
+        padding: 6px 3px;
+    }
+
+    .edit-action-btn {
+        display: block;
+        width: 95%;
+        margin: 2px auto;
+        font-size: 0.65rem;
+        padding: 4px 2px;
     }
 }

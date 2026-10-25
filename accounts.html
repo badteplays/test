@@ -2,75 +2,72 @@
 <html lang="en">
 
 <head>
- <meta charset="UTF-8">
- <meta name="viewport" content="width=device-width, initial-scale=1.0">
- <title>Accounts</title>
- <link rel="stylesheet" href="accounts.css">
- <script type="module" src="accounts.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accounts - Supplify Stationery Dispenser</title>
+    <link rel="stylesheet" href="accounts.css">
+    <script type="module" src="accounts.js"></script>
 </head>
 
 <body>
- <header class="main-header">
- <button id="menu-button" class="menu-button">
- <span class="menu-text">MENU</span>
- <span class="menu-icon">☰</span>
- </button>
+    <header class="main-header">
+        <button id="menu-button" class="menu-button">
+            <span class="menu-text">MENU</span>
+            <span class="menu-icon">☰</span>
+        </button>
 
- <nav class="top-nav">
- <span class="admin-label">ADMIN |</span>
- <button id="logoutBtn" class="logout-btn">LOGOUT</button>
- </nav>
- </header>
+        <nav class="top-nav">
+            <span id="syncStatus" class="status-circle gray" title="Mega Sync Status"></span>
+            <span class="admin-label">ADMIN |</span>
+            <button id="logoutBtn" class="logout-btn">LOGOUT</button>
+        </nav>
+    </header>
 
- <main class="content-wrapper">
- <h1 class="page-title">ACCOUNTS</h1>
- <!---
+    <main class="content-wrapper">
+        <h1 class="page-title">ACCOUNTS</h1>
 
- <div class="items-container">
+        <div class="new-user">
+            <div class="new-user-title">Add New RFID User:</div>
+            <div class="add-account-form">
+                <input type="text" id="newName" placeholder="Name" aria-label="User Name">
+                <input type="text" id="newUID" placeholder="RFID UID (e.g. 2722c91)" aria-label="RFID UID" spellcheck="false" autocapitalize="none">
+                <input type="text" id="newPass" placeholder="4-Digit PIN (e.g. 0000)" aria-label="PIN or Password" inputmode="numeric" maxlength="10">
+                <input type="number" id="newPoints" placeholder="Initial Points (0)" aria-label="Initial Points" min="0" value="0">
+                <button type="button" id="addAccountBtn" class="add-user-btn">+ ADD USER</button>
+            </div>
+            <div id="account-feedback" class="account-feedback" role="status" aria-live="polite"></div>
+        </div>
 
- </div>
- -->
- <!--
- <div class="new-user">
- <div>Add New User:</div>
- <div class="add-account-form">
- <input type="text" id="newName" placeholder="Name" style="padding: 5px;">
- <input type="text" id="newUID" placeholder="RFID UID" style="padding: 5px;">
- <input type="text" id="newPass" placeholder="PIN/Password" style="padding: 5px;">
- <button id="addAccountBtn"
-style="background: #00ff88; font-weight: bold; padding: 5px 15px; cursor: pointer;">+ ADD
- USER</button>
- </div>
- </div>
+        <div class="sync-section">
+            <button type="button" id="syncBtn">SYNC TO MEGA</button>
+            <div id="sync-display-box">Waiting for sync data...</div>
+        </div>
 
- <div class="sync-section" style="margin-bottom: 10px; display: flex;
-flex-direction: row;">
- <button id="syncBtn" style="background: #007bff; color: white; font-weight: bold; padding: 10px 20px; cursor: pointer; border: 4px solid white;">
- SYNC TO MEGA
- </button>
-  <div id="sync-display-box" style="background: black; color: #00ff88; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 12px; min-width: 250px; min-height: 50px; border: 1px solid #333;">
-        Waiting for sync data...
-    </div>
- </div>
--->
+        <div class="table-controls">
+            <input type="search" id="account-search" class="search-input" placeholder="Search by Name or UID..." aria-label="Search accounts by Name or UID">
+            <button type="button" id="export-accounts-btn" class="export-btn">EXPORT CSV</button>
+        </div>
 
- <div class="accounts-container">
- <table id="accounts-table">
- <thead>
- <tr>
- <!--<th>NAME</th>-->
- <th>UID</th>
- <!--<th>PASSWORD</th>-->
- <th>POINTS</th>
- <!--<th>ACTIONS</th>-->
- </tr>
- </thead>
- <tbody id="table-body">
- </tbody>
- </table>
- </div>
+        <div class="accounts-container">
+            <div tabindex="0" role="region" aria-label="Registered RFID Accounts" class="table-wrapper">
+                <table id="accounts-table">
+                    <thead>
+                        <tr>
+                            <th>NAME</th>
+                            <th>UID</th>
+                            <th>PASSWORD</th>
+                            <th>POINTS</th>
+                            <th>ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        <tr><td colspan="5">Loading accounts...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
- </main>
+    </main>
 </body>
 
-</html> 
+</html>

@@ -13,9 +13,9 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const auth = getAuth();
+const auth = getAuth(app);
 
-// --- 1. ROUTE GUARD & SESSION CHECK ---
+// --- 1. SESSION CHECK ---
 onAuthStateChanged(auth, (user) => {
     if (user) {
         console.log("Welcome, Admin:", user.email);
@@ -37,12 +37,13 @@ const admin = document.getElementById('admin');
 // Logout Functionality
 if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
+        localStorage.removeItem('supplify_admin_session');
         signOut(auth).then(() => {
             console.log("User signed out.");
-            // .replace() prevents using the 'Back' button to return to this menu
             window.location.replace("login.html");
         }).catch((error) => {
             console.error("Logout Error:", error);
+            window.location.replace("login.html");
         });
     });
 }
@@ -50,49 +51,42 @@ if (logoutBtn) {
 // Menu Buttons
 if (accounts) {
     accounts.addEventListener('click', () => {
-        console.log("Opening Accounts...");
         window.location.href = "accounts.html";
     });
 }
 
 if (loginhistory) {
     loginhistory.addEventListener('click', () => {
-        console.log("Viewing Login History...");
         window.location.href = "loginhistory.html";
     });
 }
 
 if (itemprices) {
     itemprices.addEventListener('click', () => {
-        console.log("Viewing Item Prices...");
         window.location.href = "itemprices.html";
     });
 }
 
 if (transactionhistory) {
     transactionhistory.addEventListener('click', () => {
-        console.log("Viewing Transactions...");
         window.location.href = "transactionhistory.html";
     });
 }
 
 if (pointshistory) {
     pointshistory.addEventListener('click', () => {
-        console.log("Viewing Transactions...");
         window.location.href = "pointshistory.html";
     });
 }
 
 if (bottlevalue) {
     bottlevalue.addEventListener('click', () => {
-        console.log("Viewing Transactions...");
         window.location.href = "bottlevalue.html";
     });
 }
 
 if (admin) {
     admin.addEventListener('click', () => {
-        console.log("Viewing Admin Page...");
         window.location.href = "admin.html";
     });
 }

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BOTTLE VALUE</title>
+    <title>Bottle Value - Supplify Stationery Dispenser</title>
     <link rel="stylesheet" href="bottlevalue.css">
     <script type="module" src="bottlevalue.js"></script>
 </head>
@@ -25,44 +25,53 @@
         <h1 class="page-title">BOTTLE VALUE</h1>
 
         <div class="items-container">
-            
+
             <div class="item-card">
-                <img src="images/1000ml.png" alt="Pen" class="item-image red-border">
+                <img src="images/1000ml.png" alt="1000mL Bottle" class="item-image red-border">
                 <div class="item-details">
                     <p class="item-name">1000ML</p>
+                    <label class="field-label">POINTS EARNED</label>
                     <div class="price-controls">
-    <input type="number" class="price-input" step="0.1" min="0" value="0" disabled>
-</div>
+                        <button type="button" class="arrow-btn" data-dir="down" aria-label="Decrease 1000mL Bottle Points">◀</button>
+                        <input type="number" class="price-input" step="1" min="0" value="0" aria-label="1000mL Bottle Points Value" disabled>
+                        <button type="button" class="arrow-btn" data-dir="up" aria-label="Increase 1000mL Bottle Points">▶</button>
+                    </div>
                 </div>
             </div>
 
             <div class="item-card">
-                <img src="images/500ml.png" alt="Marker" class="item-image orange-border">
+                <img src="images/500ml.png" alt="500mL Bottle" class="item-image orange-border">
                 <div class="item-details">
                     <p class="item-name">500ML</p>
+                    <label class="field-label">POINTS EARNED</label>
                     <div class="price-controls">
-    <input type="number" class="price-input" step="0.1" min="0" value="0" disabled>
-</div>
+                        <button type="button" class="arrow-btn" data-dir="down" aria-label="Decrease 500mL Bottle Points">◀</button>
+                        <input type="number" class="price-input" step="1" min="0" value="0" aria-label="500mL Bottle Points Value" disabled>
+                        <button type="button" class="arrow-btn" data-dir="up" aria-label="Increase 500mL Bottle Points">▶</button>
+                    </div>
                 </div>
             </div>
 
             <div class="item-card">
-                <img src="images/350ml.png" alt="Intermediate Paper" class="item-image yellow-border">
+                <img src="images/350ml.png" alt="350mL Bottle" class="item-image yellow-border">
                 <div class="item-details">
                     <p class="item-name">350ML</p>
+                    <label class="field-label">POINTS EARNED</label>
                     <div class="price-controls">
-    <input type="number" class="price-input" step="0.1" min="0" value="0" disabled>
-</div>
+                        <button type="button" class="arrow-btn" data-dir="down" aria-label="Decrease 350mL Bottle Points">◀</button>
+                        <input type="number" class="price-input" step="1" min="0" value="0" aria-label="350mL Bottle Points Value" disabled>
+                        <button type="button" class="arrow-btn" data-dir="up" aria-label="Increase 350mL Bottle Points">▶</button>
+                    </div>
                 </div>
             </div>
-            
-            
-            
+
         </div>
 
+        <div id="save-feedback" class="save-feedback" role="status" aria-live="polite"></div>
+
         <button id="edit" class="edit">EDIT</button>
-         
+
     </main>
-        
+
 </body>
 </html>

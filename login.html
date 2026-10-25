@@ -14,10 +14,46 @@
             <h1>ARDUINO BASED <br> STATIONERY DISPENSER</h1>
         </div>
 
-        <form class="login-form">
-            <input type="text" placeholder="EMAIL" id="username" required>
-            <input type="password" placeholder="PASSWORD" id="password" required>
-            <button type="submit" class="login-btn" id="login">LOGIN</button>
+        <form class="login-form" id="login-form">
+            <div class="input-group">
+                <label for="username" class="sr-only">Username or Email</label>
+                <input
+                    type="text"
+                    placeholder="USERNAME OR EMAIL"
+                    id="username"
+                    name="username"
+                    autocomplete="username"
+                    spellcheck="false"
+                    autocorrect="off"
+                    autocapitalize="none"
+                    enterkeyhint="next"
+                    required
+                >
+            </div>
+
+            <div class="input-group password-group">
+                <label for="current-password" class="sr-only">Password</label>
+                <input
+                    type="password"
+                    placeholder="PASSWORD"
+                    id="current-password"
+                    name="password"
+                    autocomplete="current-password"
+                    enterkeyhint="done"
+                    required
+                >
+                <button type="button" id="toggle-password" class="toggle-password-btn" aria-label="Show password">SHOW</button>
+            </div>
+
+            <div id="login-feedback" class="form-feedback" role="alert" aria-live="polite"></div>
+
+            <button type="submit" class="login-btn" id="login">SIGN IN</button>
+
+            <div class="auth-links">
+                <a href="register.html">Register New Admin</a>
+                <span>|</span>
+                <a href="admin.html">Go to Admin Panel</a>
+            </div>
         </form>
     </div>
 

@@ -4,10 +4,9 @@ body {
     color: white;
     font-family: Arial, sans-serif;
     margin: 0;
-    height: 100vh;
-    overflow: hidden;
+    min-height: 100vh;
+    overflow-y: auto;
 }
-
 
 .top-nav {
     position: absolute;
@@ -32,46 +31,45 @@ body {
     font-weight: bold;
     font-size: 1.2rem;
     cursor: pointer;
-    box-shadow: 4px 4px 0px rgba(0,0,0,0.5); /* Adds that slight depth seen in image */
+    box-shadow: 4px 4px 0px rgba(0,0,0,0.5);
+}
+
+.logout-btn:hover,
+.menu-button:hover,
+.edit:hover {
+    background: white;
+    color: black;
 }
 
 .content-wrapper {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding-top: 60px;
-    height: 100%;
+    padding: 60px 20px 50px;
+    min-height: 100%;
+    box-sizing: border-box;
 }
 
 .page-title {
     font-size: 2.5rem;
     letter-spacing: 3px;
     margin-bottom: 20px;
-}
-
-.edit-button {
-    display: flex;
-    /* This pushes the button to the far right of the div */
-    justify-content: flex-end; 
-    
-    /* Matches the width of your blue box so the right edges line up */
-    width: 100%; 
-    max-width: 1050px;
-    margin: 0 auto; /* Centers the wrapper itself on the screen */
+    text-align: center;
 }
 
 /* Blue Item Box */
-/* Blue Item Box */
-
 .items-container {
     background-color: #00d2da;
     border: 4px solid white;
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-around;
+    gap: 20px;
     padding: 40px 20px;
-    width: 80%;
+    width: 85%;
     max-width: 800px;
-    margin-bottom: 20px; /* Space between box and Edit button */
+    margin-bottom: 18px;
+    box-sizing: border-box;
 }
 
 .item-card {
@@ -79,7 +77,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 180px; /* Adjust this so the longest text fits on one or two lines */
+    width: 180px;
 }
 
 .item-image {
@@ -87,41 +85,61 @@ body {
     height: 120px;
     object-fit: cover;
     margin-bottom: 10px;
+    border: 3px solid white;
+    background: white;
 }
 
 .item-name {
     font-weight: bold;
-    font-size: 1.1rem;
-    margin-bottom: 5px;
+    font-size: 1.15rem;
+    margin: 0 0 5px;
+    color: #000;
+}
+
+.field-label {
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+    color: #000;
+    font-weight: bold;
+    margin-bottom: 4px;
 }
 
 /* Price Controls */
 .price-controls {
     display: flex;
     align-items: center;
-    justify-content: center; /* Ensures the arrows/number are centered inside the div */
-    gap: 10px;
+    justify-content: center;
+    gap: 6px;
+}
+
+.price-input {
+    width: 75px;
+    padding: 5px 6px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 1rem;
+    border: 2px solid black;
+    background: white;
+    color: black;
+}
+
+.price-input:disabled {
+    background: rgba(255, 255, 255, 0.85);
+    color: #111;
 }
 
 .arrow-btn {
-    background: gray; /* Default color */
+    background: gray;
     border: 2px solid white;
     color: white;
     cursor: pointer;
-    padding: 2px 8px;
-    transition: background 0.3s; /* Smooth color change */
+    padding: 4px 8px;
+    font-size: 0.9rem;
+    transition: background 0.3s;
 }
 
-/* New class for the Green state */
 .arrow-btn.green {
-    background: #4CAF50; /* Green color */
-}
-
-
-
-.price-value {
-    font-size: 1.5rem;
-    font-weight: bold;
+    background: #4CAF50;
 }
 
 .menu-button {
@@ -132,88 +150,65 @@ body {
     background-color: black;
     color: white;
     border: 4px solid white;
-    padding: 8px 15px; /* Wider padding for the word "MENU" */
+    padding: 8px 15px;
     font-weight: bold;
     font-size: 1.2rem;
     cursor: pointer;
 }
 
-
-
-/* Hide the hamburger icon by default (on Desktop) */
 .menu-icon {
     display: none;
 }
 
-
 .edit {
-        top: 20px;
-        left: 20px;
-        z-index: 1000;
-        background-color: black;
-        color: white;
-        border: 4px solid white;
-        padding: 8px 15px; /* Wider padding for the word "MENU" */
-        font-weight: bold;
-        font-size: 1.2rem;
-        cursor: pointer;
-    }
+    background-color: black;
+    color: white;
+    border: 4px solid white;
+    padding: 10px 24px;
+    font-weight: bold;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+.save-feedback {
+    min-height: 24px;
+    margin-bottom: 10px;
+    font-weight: bold;
+    font-size: 1rem;
+}
+
+.save-feedback.success {
+    color: #00ff88;
+    background: rgba(0, 0, 0, 0.75);
+    padding: 6px 14px;
+    border: 1px solid #00ff88;
+}
+
+.save-feedback.error {
+    color: #ff6b6b;
+    background: rgba(0, 0, 0, 0.75);
+    padding: 6px 14px;
+    border: 1px solid #ff6b6b;
+}
 
 .item-details {
     display: flex;
     flex-direction: column;
-    align-items: center; /* This centers the arrows and text horizontally */
+    align-items: center;
     width: 100%;
 }
 
-/*  EDIT TS */
 @media screen and (max-width: 700px) {
-    /* 1. Global Page Setup */
-
     body {
         display: flex;
         flex-direction: column;
-        align-items: center; /* Centers the blue box */
-        height: auto; 
+        align-items: center;
+        height: auto;
         min-height: 100vh;
-        overflow-y: auto; /* Enables scrolling */
+        overflow-y: auto;
         background: #1a1a2e url('images/mobile-background.jpg') no-repeat center center/cover;
     }
 
-    .main-header {
-        height: 20px;
-        padding: 0 15px;
-    }
-
-    .items-container {
-    background-color: #00d2da;
-    border: 4px solid white;
-    /* Change width to auto or a percentage with a larger max-width */
-    width: 90%; 
-    max-width: 450px; 
-    display: flex;
-    flex-direction: column;
-    padding: 20px; /* Give it some breathing room */
-    gap: 30px;
-    box-sizing: border-box;
-    /* This ensures it expands height-wise as much as needed */
-    height: auto; 
-}
-
-    .edit {
-        top: 20px;
-        left: 20px;
-        z-index: 1000;
-        background-color: black;
-        color: white;
-        border: 4px solid white;
-        padding: 8px 15px; /* Wider padding for the word "MENU" */
-        font-weight: bold;
-        font-size: 1.2rem;
-        cursor: pointer;
-    }
-
-    
     .menu-button {
         padding: 5px 10px;
         border-width: 3px;
@@ -222,10 +217,11 @@ body {
 
     .top-nav {
         gap: 8px;
+        right: 12px;
     }
 
     .admin-label {
-        font-size: 0.6rem;
+        font-size: 0.7rem;
     }
 
     .logout-btn {
@@ -234,63 +230,55 @@ body {
         border-width: 3px;
     }
 
-
-    /* 3. Centered and Smaller Title */
     .page-title {
-        font-size: 1.8rem; /* Scaled down */
+        font-size: 1.8rem;
         text-align: center;
         margin: 20px 0;
         width: 100%;
         letter-spacing: 2px;
     }
 
-    /* 4. Blue Div with Side Margins */
     .items-container {
         background-color: #00d2da;
         border: 4px solid white;
-        width: 100%; /* This creates the left/right margin effect */
+        width: 95%;
         max-width: 340px;
         display: flex;
         flex-direction: column;
         padding: 15px;
-        gap: 50px;
+        gap: 30px;
         box-sizing: border-box;
     }
 
-    /* 5. Item Row Scaling */
-   .item-card {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    width: 100%; /* Forces card to stay inside the blue container */
-}
+    .item-card {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        width: 100%;
+    }
 
     .item-image {
-        width: 75px;  /* Smaller images */
+        width: 75px;
         height: 75px;
         border: 3px solid white;
         background: white;
+        margin-bottom: 0;
     }
 
     .item-details {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    flex: 1; /* Allows this side to take up remaining space */
-    color: white;
-    /* Add this to prevent text from pushing outside the box */
-    word-wrap: break-word;
-    text-align: center;
-}
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex: 1;
+        word-wrap: break-word;
+        text-align: center;
+    }
 
-.item-name {
-    font-size: 0.85rem;
-    margin-bottom: 5px;
-    width: 100%; /* Ensures text centers within its half of the card */
-}
-
-
-
+    .item-name {
+        font-size: 0.9rem;
+        margin-bottom: 4px;
+        width: 100%;
+    }
 }

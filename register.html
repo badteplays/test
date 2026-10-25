@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Admin - Stationery Dispenser</title>
+    <link rel="stylesheet" href="style.css">
+    <script type="module" src="register.js" defer></script>
+</head>
+<body>
+
+    <div class="login-container">
+        <div class="header-box">
+            <h1>REGISTER ADMIN <br> STATIONERY DISPENSER</h1>
+        </div>
+
+        <form class="login-form" id="register-form">
+            <div class="input-group">
+                <label for="username" class="sr-only">Email Address</label>
+                <input
+                    type="email"
+                    placeholder="EMAIL ADDRESS"
+                    id="username"
+                    name="email"
+                    autocomplete="username"
+                    spellcheck="false"
+                    autocorrect="off"
+                    autocapitalize="none"
+                    enterkeyhint="next"
+                    required
+                >
+            </div>
+
+            <div class="input-group password-group">
+                <label for="new-password" class="sr-only">Password (min 6 characters)</label>
+                <input
+                    type="password"
+                    placeholder="PASSWORD (MIN 6 CHARS)"
+                    id="new-password"
+                    name="password"
+                    autocomplete="new-password"
+                    minlength="6"
+                    enterkeyhint="done"
+                    required
+                >
+                <button type="button" id="toggle-password" class="toggle-password-btn" aria-label="Show password">SHOW</button>
+            </div>
+
+            <div id="register-feedback" class="form-feedback" role="alert" aria-live="polite"></div>
+
+            <button type="submit" class="login-btn" id="login">REGISTER</button>
+
+            <div class="auth-links">
+                <a href="login.html">Back to Sign In</a>
+                <span>|</span>
+                <a href="admin.html">Go to Admin Panel</a>
+            </div>
+        </form>
+    </div>
+
+</body>
+</html>
