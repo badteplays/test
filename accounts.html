@@ -31,14 +31,14 @@
 
         <div class="new-user">
             <div class="new-user-title">Add New RFID User:</div>
-            <div class="add-account-form">
-                <input type="text" id="newName" placeholder="Name" aria-label="User Name">
+            <form id="add-account-form" class="add-account-form">
+                <input type="text" id="newName" placeholder="Name" aria-label="User Name" required>
                 <input type="email" id="newEmail" placeholder="Email (e.g. user@supplify.com)" aria-label="User Email" spellcheck="false" autocapitalize="none" autocorrect="off">
-                <input type="text" id="newUID" placeholder="RFID UID (e.g. 2722c91)" aria-label="RFID UID" spellcheck="false" autocapitalize="none">
-                <input type="text" id="newPass" placeholder="PIN / Password (e.g. 0000)" aria-label="PIN or Password" maxlength="20">
-                <input type="number" id="newPoints" placeholder="Initial Points (0)" aria-label="Initial Points" min="0" value="0">
-                <button type="button" id="addAccountBtn" class="add-user-btn">+ ADD USER</button>
-            </div>
+                <input type="text" id="newUID" placeholder="RFID UID (e.g. 2722c91)" aria-label="RFID UID" spellcheck="false" autocapitalize="none" required>
+                <input type="text" id="newPass" placeholder="4-Digit PIN (e.g. 0000)" aria-label="Numeric PIN (4-10 digits)" inputmode="numeric" pattern="[0-9]{4,10}" maxlength="10" required>
+                <input type="number" id="newPoints" placeholder="Initial Points (0)" aria-label="Initial Points" min="0" max="2147483647" value="0" required>
+                <button type="submit" id="addAccountBtn" class="add-user-btn">+ ADD USER</button>
+            </form>
             <div id="account-feedback" class="account-feedback" role="status" aria-live="polite"></div>
         </div>
 
@@ -48,8 +48,8 @@
         </div>
 
         <div class="table-controls">
-            <input type="search" id="account-search" class="search-input" placeholder="Search by Name, Email, or UID..." aria-label="Search accounts by Name, Email, or UID">
-            <button type="button" id="export-accounts-btn" class="export-btn">EXPORT CSV</button>
+            <input type="search" id="account-search" class="search-input" placeholder="Search RFID users by Name, Email, or UID..." aria-label="Search RFID accounts by Name, Email, or UID">
+            <button type="button" id="export-accounts-btn" class="export-btn">EXPORT RFID CSV</button>
         </div>
 
         <div class="accounts-container">
@@ -77,13 +77,18 @@
 
         <div class="new-user">
             <div class="new-user-title">Add New Web Admin Account:</div>
-            <div class="add-account-form">
-                <input type="text" id="newAdminUsername" placeholder="Username (e.g. admin)" aria-label="Admin Username" spellcheck="false" autocapitalize="none" autocorrect="off">
-                <input type="email" id="newAdminEmail" placeholder="Email (e.g. admin@supplify.local)" aria-label="Admin Email" spellcheck="false" autocapitalize="none" autocorrect="off">
-                <input type="text" id="newAdminPass" placeholder="Password" aria-label="Admin Password">
-                <button type="button" id="addAdminBtn" class="add-user-btn">+ ADD ADMIN</button>
-            </div>
+            <form id="add-admin-form" class="add-account-form">
+                <input type="text" id="newAdminUsername" placeholder="Username (e.g. admin2)" aria-label="Admin Username" spellcheck="false" autocapitalize="none" autocorrect="off" required>
+                <input type="email" id="newAdminEmail" placeholder="Email (e.g. admin2@supplify.local)" aria-label="Admin Email" spellcheck="false" autocapitalize="none" autocorrect="off" required>
+                <input type="text" id="newAdminPass" placeholder="Password (min 6 chars)" aria-label="Admin Password" minlength="6" required>
+                <button type="submit" id="addAdminBtn" class="add-user-btn">+ ADD ADMIN</button>
+            </form>
             <div id="admin-account-feedback" class="account-feedback" role="status" aria-live="polite"></div>
+        </div>
+
+        <div class="table-controls">
+            <input type="search" id="admin-account-search" class="search-input" placeholder="Search Web Admins by Username or Email..." aria-label="Search Web Admins by Username or Email">
+            <button type="button" id="export-admins-btn" class="export-btn">EXPORT ADMIN CSV</button>
         </div>
 
         <div class="accounts-container">

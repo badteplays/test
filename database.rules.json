@@ -1,0 +1,27 @@
+{
+  "rules": {
+    ".read": "auth != null",
+    ".write": "auth != null",
+    "accounts": {
+      "$uid": {
+        ".validate": "newData.hasChildren(['name', 'password', 'points']) && newData.child('name').isString() && newData.child('password').isString() && newData.child('password').val().matches(/^[0-9]{4,10}$/) && newData.child('points').isNumber() && newData.child('points').val() >= 0 && newData.child('points').val() <= 2147483647"
+      }
+    },
+    "inventory": {
+      "pen": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 2147483647" },
+      "marker": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 2147483647" },
+      "yellowpaper": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 2147483647" },
+      "shortbondpaper": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 2147483647" }
+    },
+    "bottlevalue": {
+      "ml1000": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 2147483647" },
+      "ml500": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 2147483647" },
+      "ml350": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 2147483647" }
+    },
+    "webAdmins": {
+      "$adminKey": {
+        ".validate": "newData.hasChildren(['username', 'email', 'password']) && newData.child('username').isString() && newData.child('email').isString() && newData.child('password').isString() && newData.child('password').val().length >= 6"
+      }
+    }
+  }
+}

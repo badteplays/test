@@ -27,12 +27,12 @@
 
         <div class="log-points-box">
             <div class="log-points-title">Record Bottle Deposit Points:</div>
-            <div class="log-points-form">
-                <input type="text" id="deposit-name" placeholder="Name (e.g. Maria)" aria-label="Student Name">
-                <input type="text" id="deposit-uid" placeholder="RFID UID (e.g. 2722c91)" aria-label="RFID UID">
-                <input type="number" id="deposit-points" placeholder="Points Earned (+)" min="1" value="2" aria-label="Points Earned">
-                <button type="button" id="add-points-log-btn" class="add-points-btn">+ RECORD POINTS</button>
-            </div>
+            <form id="log-points-form" class="log-points-form">
+                <input type="text" id="deposit-name" placeholder="Name (optional if UID exists)" aria-label="Student Name">
+                <input type="text" id="deposit-uid" placeholder="RFID UID (e.g. 2722c91)" aria-label="RFID UID" required>
+                <input type="number" id="deposit-points" placeholder="Points Earned (+)" min="1" max="2147483647" value="1" aria-label="Points Earned" required>
+                <button type="submit" id="add-points-log-btn" class="add-points-btn">+ RECORD POINTS</button>
+            </form>
             <div id="points-feedback" class="points-feedback" role="status" aria-live="polite"></div>
         </div>
 

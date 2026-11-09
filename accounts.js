@@ -1,53 +1,15 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
-import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
-
-// --- 1. CONFIGURATION ---
-const firebaseConfig = {
-    apiKey: "AIzaSyDD3uJlu_rT4DA4jnjyzixRRYc_69r8SL0",
-    authDomain: "stationery-dispenser.firebaseapp.com",
-    projectId: "stationery-dispenser",
-    storageBucket: "stationery-dispenser.firebasestorage.app",
-    messagingSenderId: "57000519693",
-    appId: "1:57000519693:web:748481665644e9c5124d44",
-    databaseURL: "https://stationery-dispenser-default-rtdb.asia-southeast1.firebasedatabase.app"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getDatabase(app);
-
-// Helper to parse DD/MM/YYYY or YYYY-MM-DD + HH:mm:ss properly
-function parseDateTime(dateStr, timeStr) {
-    if (!dateStr) return 0;
-    let day = 1, month = 1, year = 1970;
-    if (dateStr.includes('/')) {
-        const parts = dateStr.split('/').map(Number);
-        if (parts.length === 3) {
-            [day, month, year] = parts;
-        }
-    } else if (dateStr.includes('-')) {
-        const parts = dateStr.split('-').map(Number);
-        if (parts.length === 3) {
-            [year, month, day] = parts;
-        }
-    }
-    const timeParts = (timeStr || '00:00:00').split(':').map(Number);
-    return new Date(year, (month || 1) - 1, day || 1, timeParts[0] || 0, timeParts[1] || 0, timeParts[2] || 0).getTime();
-}
-
-function safeSetHTML(el, html) {
-    if ('setHTML' in Element.prototype) {
-        el.setHTML(html);
-    } else {
-        el.innerHTML = html;
-    }
-}
+import {
+    auth, db, MAX_POINTS,
+    onAuthStateChanged, signOut, ref, set, onValue, update,
+    normalizeUsername, normalizeUid, isValidUid, isValidEmail, isValidPin,
+    parseWholeNumber, formatDateDisplay, nowStamp, downloadCsv, getSyncState
+} from "./common.js";
 
 document.addEventListener('DOMContentLoaded', () => {
     const logoutBtn = document.getElementById('logoutBtn');
     const tableBody = document.getElementById('table-body');
     const menuButton = document.getElementById('menu-button');
+    const addAccountForm = document.getElementById('add-account-form');
     const addAccountBtn = document.getElementById('addAccountBtn');
     const newNameInput = document.getElementById('newName');
     const newEmailInput = document.getElementById('newEmail');
@@ -63,15 +25,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Web Admin Login Accounts elements
     const webAdminsTableBody = document.getElementById('web-admins-table-body');
+    const addAdminForm = document.getElementById('add-admin-form');
     const newAdminUsernameInput = document.getElementById('newAdminUsername');
     const newAdminEmailInput = document.getElementById('newAdminEmail');
     const newAdminPassInput = document.getElementById('newAdminPass');
     const addAdminBtn = document.getElementById('addAdminBtn');
     const adminFeedbackEl = document.getElementById('admin-account-feedback');
+    const adminSearchInput = document.getElementById('admin-account-search');
+    const exportAdminsBtn = document.getElementById('export-admins-btn');
 
     let accountsCache = {};
     let filteredUIDs = [];
     let webAdminsCache = {};
+    let filteredAdminKeys = [];
 
     function showFeedback(msg, isError = false, targetEl = feedbackEl) {
         if (!targetEl) return;
@@ -82,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 targetEl.textContent = '';
                 targetEl.className = 'account-feedback';
             }
-        }, 4000);
+        }, 4500);
     }
 
     if (menuButton) {
@@ -192,10 +158,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (searchInput) {
-        searchInput.addEventListener('input', () => {
-            renderAccountsTable();
-            renderWebAdminsTable();
-        });
+        searchInput.addEventListener('input', renderAccountsTable);
+    }
+
+    if (adminSearchInput) {
+        adminSearchInput.addEventListener('input', renderWebAdminsTable);
     }
 
     // --- 3. EVENT DELEGATION FOR DISPENSER ACCOUNTS (EDIT & DELETE) ---
@@ -209,28 +176,47 @@ document.addEventListener('DOMContentLoaded', () => {
             const currentUser = accountsCache[uid] || {};
 
             if (type === 'points') {
-                const newPts = prompt(`Enter new points value for ${currentUser.name || uid} (Whole numbers only, max 10 digits):`, String(currentUser.points ?? 0));
-                if (newPts !== null && newPts.trim() !== "") {
-                    let cleanPts = newPts.replace(/\D/g, '');
-                    if (cleanPts.length > 10) {
-                        cleanPts = cleanPts.substring(0, 10);
+                const newPts = prompt(
+                    `Enter new points value for ${currentUser.name || uid} (Whole number 0 to ${MAX_POINTS}):`,
+                    String(currentUser.points ?? 0)
+                );
+                if (newPts !== null) {
+                    const parsedPts = parseWholeNumber(newPts, MAX_POINTS);
+                    if (parsedPts === null) {
+                        showFeedback(`Invalid points. Enter a whole number between 0 and ${MAX_POINTS.toLocaleString()}.`, true);
+                        return;
                     }
-                    if (cleanPts !== "") {
-                        const finalPts = parseInt(cleanPts, 10);
-                        updateAccount(uid, { points: finalPts }, `Updated points for ${currentUser.name || uid} to ${finalPts}.`);
-                    } else {
-                        showFeedback("Invalid input. Please enter a valid whole number.", true);
-                    }
+                    updateAccount(uid, { points: parsedPts }, `Updated points for ${currentUser.name || uid} to ${parsedPts}.`);
                 }
             } else if (type === 'pass') {
-                const newPass = prompt(`Enter new password/PIN for ${currentUser.name || uid}:`, String(currentUser.password ?? ''));
-                if (newPass !== null && newPass.trim() !== "") {
-                    updateAccount(uid, { password: newPass.trim() }, `Updated PIN/password for ${currentUser.name || uid}.`);
+                const newPass = prompt(
+                    `Enter new numeric keypad PIN (4 to 10 digits) for ${currentUser.name || uid}:`,
+                    String(currentUser.password ?? '')
+                );
+                if (newPass !== null) {
+                    const trimmed = newPass.trim();
+                    if (!isValidPin(trimmed)) {
+                        showFeedback("Invalid PIN. Dispenser keypad requires 4 to 10 numeric digits (0-9).", true);
+                        return;
+                    }
+                    updateAccount(uid, { password: trimmed }, `Updated PIN for ${currentUser.name || uid}.`);
                 }
             } else if (type === 'email') {
                 const newEmail = prompt(`Enter new email for ${currentUser.name || uid}:`, String(currentUser.email ?? ''));
-                if (newEmail !== null && newEmail.trim() !== "") {
-                    updateAccount(uid, { email: newEmail.trim() }, `Updated email for ${currentUser.name || uid} to "${newEmail.trim()}".`);
+                if (newEmail !== null) {
+                    const trimmed = newEmail.trim();
+                    if (!isValidEmail(trimmed)) {
+                        showFeedback("Please enter a valid email address.", true);
+                        return;
+                    }
+                    const duplicateUid = Object.keys(accountsCache).find(
+                        (k) => k !== uid && String(accountsCache[k]?.email || '').toLowerCase() === trimmed.toLowerCase()
+                    );
+                    if (duplicateUid) {
+                        showFeedback(`That email is already assigned to UID ${duplicateUid}.`, true);
+                        return;
+                    }
+                    updateAccount(uid, { email: trimmed }, `Updated email for ${currentUser.name || uid} to "${trimmed}".`);
                 }
             } else if (type === 'name') {
                 const newName = prompt(`Enter new name for UID ${uid}:`, String(currentUser.name ?? ''));
@@ -256,38 +242,74 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- 4. NEW DISPENSER ACCOUNT CREATION ---
-    if (addAccountBtn) {
-        addAccountBtn.addEventListener('click', () => {
-            const name = newNameInput ? newNameInput.value.trim() : '';
-            const email = newEmailInput ? newEmailInput.value.trim() : '';
-            const uid = newUIDInput ? newUIDInput.value.trim().toLowerCase() : '';
-            const pass = newPassInput ? newPassInput.value.trim() : '';
-            const ptsRaw = newPointsInput ? newPointsInput.value.trim() : '0';
-            const pts = Math.max(0, parseInt(ptsRaw, 10) || 0);
+    function handleAddRfidAccount(event) {
+        if (event) event.preventDefault();
+        const name = newNameInput ? newNameInput.value.trim() : '';
+        const emailRaw = newEmailInput ? newEmailInput.value.trim() : '';
+        const uid = normalizeUid(newUIDInput ? newUIDInput.value : '');
+        const pass = newPassInput ? newPassInput.value.trim() : '';
+        const pts = parseWholeNumber(newPointsInput ? newPointsInput.value : '0', MAX_POINTS);
 
-            if (!name || !uid || !pass) {
-                showFeedback("Please fill in Name, RFID UID, and PIN/Password.", true);
-                return;
-            }
+        if (!name || !uid || !pass) {
+            showFeedback("Please fill in Name, RFID UID, and PIN.", true);
+            return;
+        }
 
-            const finalEmail = email || `${name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() || uid}@supplify.com`;
+        if (!isValidUid(uid)) {
+            showFeedback("RFID UID must be 3 to 24 alphanumeric characters.", true);
+            return;
+        }
 
-            set(ref(db, 'accounts/' + uid), {
-                name: name,
-                email: finalEmail,
-                password: pass,
-                points: pts
+        if (accountsCache[uid]) {
+            showFeedback(`UID "${uid}" already exists (${accountsCache[uid].name || 'User'}). Use Edit buttons in the table instead of overwriting.`, true);
+            return;
+        }
+
+        if (!isValidPin(pass)) {
+            showFeedback("Dispenser PIN must be 4 to 10 numeric digits (0-9).", true);
+            return;
+        }
+
+        if (pts === null) {
+            showFeedback(`Initial points must be a whole number between 0 and ${MAX_POINTS.toLocaleString()}.`, true);
+            return;
+        }
+
+        const finalEmail = emailRaw || `${name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() || uid}@supplify.com`;
+        if (!isValidEmail(finalEmail)) {
+            showFeedback("Please enter a valid email address.", true);
+            return;
+        }
+
+        const duplicateEmailUid = Object.keys(accountsCache).find(
+            (k) => String(accountsCache[k]?.email || '').toLowerCase() === finalEmail.toLowerCase()
+        );
+        if (duplicateEmailUid) {
+            showFeedback(`Email "${finalEmail}" is already used by UID ${duplicateEmailUid}.`, true);
+            return;
+        }
+
+        set(ref(db, 'accounts/' + uid), {
+            name: name,
+            email: finalEmail,
+            password: pass,
+            points: pts
+        })
+            .then(() => {
+                showFeedback(`Added user "${name}" (${finalEmail}) with ${pts} pts!`, false);
+                if (newNameInput) newNameInput.value = '';
+                if (newEmailInput) newEmailInput.value = '';
+                if (newUIDInput) newUIDInput.value = '';
+                if (newPassInput) newPassInput.value = '';
+                if (newPointsInput) newPointsInput.value = '0';
             })
-                .then(() => {
-                    showFeedback(`Added user "${name}" (${finalEmail}) with ${pts} pts!`, false);
-                    if (newNameInput) newNameInput.value = '';
-                    if (newEmailInput) newEmailInput.value = '';
-                    if (newUIDInput) newUIDInput.value = '';
-                    if (newPassInput) newPassInput.value = '';
-                    if (newPointsInput) newPointsInput.value = '0';
-                })
-                .catch((err) => showFeedback("Error adding user: " + err.message, true));
-        });
+            .catch((err) => showFeedback("Error adding user: " + err.message, true));
+    }
+
+    if (addAccountForm) {
+        addAccountForm.addEventListener('submit', handleAddRfidAccount);
+    } else if (addAccountBtn) {
+        addAccountBtn.addEventListener('click', handleAddRfidAccount);
     }
 
     // --- 4.5. WEB ADMIN LOGIN ACCOUNTS (LOAD, ADD, EDIT, DELETE) ---
@@ -309,11 +331,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const keys = Object.keys(webAdminsCache);
         if (keys.length === 0) {
             webAdminsTableBody.innerHTML = '<tr><td colspan="4">No web admin accounts found.</td></tr>';
+            filteredAdminKeys = [];
             return;
         }
 
-        const query = (searchInput ? searchInput.value : '').trim().toLowerCase();
-        const filteredKeys = keys.filter((k) => {
+        const query = (adminSearchInput ? adminSearchInput.value : '').trim().toLowerCase();
+        filteredAdminKeys = keys.filter((k) => {
             if (!query) return true;
             const adm = webAdminsCache[k] || {};
             return (
@@ -323,12 +346,12 @@ document.addEventListener('DOMContentLoaded', () => {
             );
         });
 
-        if (filteredKeys.length === 0) {
+        if (filteredAdminKeys.length === 0) {
             webAdminsTableBody.innerHTML = '<tr><td colspan="4">No matching web admin accounts found.</td></tr>';
             return;
         }
 
-        filteredKeys.forEach((key) => {
+        filteredAdminKeys.forEach((key) => {
             const adm = webAdminsCache[key] || {};
             const tr = document.createElement('tr');
 
@@ -363,37 +386,68 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    if (addAdminBtn) {
-        addAdminBtn.addEventListener('click', () => {
-            const usernameRaw = newAdminUsernameInput ? newAdminUsernameInput.value.trim() : '';
-            const emailRaw = newAdminEmailInput ? newAdminEmailInput.value.trim() : '';
-            const passwordRaw = newAdminPassInput ? newAdminPassInput.value : '';
+    function handleAddWebAdmin(event) {
+        if (event) event.preventDefault();
+        const usernameRaw = newAdminUsernameInput ? newAdminUsernameInput.value.trim() : '';
+        const emailRaw = newAdminEmailInput ? newAdminEmailInput.value.trim() : '';
+        const passwordRaw = newAdminPassInput ? newAdminPassInput.value : '';
 
-            if ((!usernameRaw && !emailRaw) || !passwordRaw) {
-                showFeedback("Please enter a Username or Email and a Password.", true, adminFeedbackEl);
-                return;
-            }
+        if (!usernameRaw || !emailRaw || !passwordRaw) {
+            showFeedback("Please enter Username, Email, and Password.", true, adminFeedbackEl);
+            return;
+        }
 
-            const username = usernameRaw || emailRaw.split('@')[0];
-            const email = emailRaw || (usernameRaw.includes('@') ? usernameRaw : `${usernameRaw}@supplify.local`);
-            const key = username.replace(/[.#$/[\]\s]/g, '_').toLowerCase() || ('admin_' + Date.now());
-            const now = new Date();
-            const createdAt = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+        if (!isValidEmail(emailRaw)) {
+            showFeedback("Please enter a valid admin email address.", true, adminFeedbackEl);
+            return;
+        }
 
-            set(ref(db, 'webAdmins/' + key), {
-                username,
-                email,
-                password: passwordRaw,
-                createdAt
-            })
-                .then(() => {
-                    showFeedback(`Added web admin "${username}" (${email})!`, false, adminFeedbackEl);
-                    if (newAdminUsernameInput) newAdminUsernameInput.value = '';
-                    if (newAdminEmailInput) newAdminEmailInput.value = '';
-                    if (newAdminPassInput) newAdminPassInput.value = '';
-                })
-                .catch((err) => showFeedback("Error adding admin: " + err.message, true, adminFeedbackEl));
+        if (passwordRaw.length < 6) {
+            showFeedback("Admin password must be at least 6 characters long.", true, adminFeedbackEl);
+            return;
+        }
+
+        const key = normalizeUsername(usernameRaw);
+        if (!key) {
+            showFeedback("Invalid username.", true, adminFeedbackEl);
+            return;
+        }
+
+        const dupKey = Object.keys(webAdminsCache).find((k) => {
+            const adm = webAdminsCache[k] || {};
+            return (
+                k.toLowerCase() === key ||
+                String(adm.username || '').toLowerCase() === usernameRaw.toLowerCase() ||
+                String(adm.email || '').toLowerCase() === emailRaw.toLowerCase()
+            );
         });
+
+        if (dupKey) {
+            showFeedback(`Web Admin with that username or email already exists ("${webAdminsCache[dupKey]?.username || dupKey}"). Use the Edit buttons below instead.`, true, adminFeedbackEl);
+            return;
+        }
+
+        const { date: createdAt } = nowStamp();
+
+        set(ref(db, 'webAdmins/' + key), {
+            username: usernameRaw,
+            email: emailRaw,
+            password: passwordRaw,
+            createdAt
+        })
+            .then(() => {
+                showFeedback(`Added web admin "${usernameRaw}" (${emailRaw})!`, false, adminFeedbackEl);
+                if (newAdminUsernameInput) newAdminUsernameInput.value = '';
+                if (newAdminEmailInput) newAdminEmailInput.value = '';
+                if (newAdminPassInput) newAdminPassInput.value = '';
+            })
+            .catch((err) => showFeedback("Error adding admin: " + err.message, true, adminFeedbackEl));
+    }
+
+    if (addAdminForm) {
+        addAdminForm.addEventListener('submit', handleAddWebAdmin);
+    } else if (addAdminBtn) {
+        addAdminBtn.addEventListener('click', handleAddWebAdmin);
     }
 
     if (webAdminsTableBody) {
@@ -408,20 +462,54 @@ document.addEventListener('DOMContentLoaded', () => {
             if (type === 'username') {
                 const nextUser = prompt(`Enter new username for ${currentAdmin.email || key}:`, String(currentAdmin.username || key));
                 if (nextUser !== null && nextUser.trim() !== "") {
-                    update(ref(db, 'webAdmins/' + key), { username: nextUser.trim() })
-                        .then(() => showFeedback(`Updated username to "${nextUser.trim()}".`, false, adminFeedbackEl))
+                    const trimmed = nextUser.trim();
+                    const newKey = normalizeUsername(trimmed);
+                    if (!newKey) {
+                        showFeedback("Invalid username.", true, adminFeedbackEl);
+                        return;
+                    }
+                    const conflict = Object.keys(webAdminsCache).find(
+                        (k) => k !== key && (k.toLowerCase() === newKey || String(webAdminsCache[k]?.username || '').toLowerCase() === trimmed.toLowerCase())
+                    );
+                    if (conflict) {
+                        showFeedback(`Username "${trimmed}" is already taken.`, true, adminFeedbackEl);
+                        return;
+                    }
+                    const updatedRecord = { ...currentAdmin, username: trimmed };
+                    const updates = { [newKey]: updatedRecord };
+                    if (newKey !== key) {
+                        updates[key] = null;
+                    }
+                    update(ref(db, 'webAdmins'), updates)
+                        .then(() => showFeedback(`Updated username to "${trimmed}".`, false, adminFeedbackEl))
                         .catch((err) => showFeedback("Update failed: " + err.message, true, adminFeedbackEl));
                 }
             } else if (type === 'email') {
                 const nextEmail = prompt(`Enter new email for ${currentAdmin.username || key}:`, String(currentAdmin.email || ''));
                 if (nextEmail !== null && nextEmail.trim() !== "") {
-                    update(ref(db, 'webAdmins/' + key), { email: nextEmail.trim() })
-                        .then(() => showFeedback(`Updated email to "${nextEmail.trim()}".`, false, adminFeedbackEl))
+                    const trimmed = nextEmail.trim();
+                    if (!isValidEmail(trimmed)) {
+                        showFeedback("Please enter a valid email address.", true, adminFeedbackEl);
+                        return;
+                    }
+                    const conflict = Object.keys(webAdminsCache).find(
+                        (k) => k !== key && String(webAdminsCache[k]?.email || '').toLowerCase() === trimmed.toLowerCase()
+                    );
+                    if (conflict) {
+                        showFeedback(`Email "${trimmed}" is already used by another admin.`, true, adminFeedbackEl);
+                        return;
+                    }
+                    update(ref(db, 'webAdmins/' + key), { email: trimmed })
+                        .then(() => showFeedback(`Updated email to "${trimmed}".`, false, adminFeedbackEl))
                         .catch((err) => showFeedback("Update failed: " + err.message, true, adminFeedbackEl));
                 }
             } else if (type === 'pass') {
-                const nextPass = prompt(`Enter new login password for ${currentAdmin.username || key}:`, String(currentAdmin.password || ''));
-                if (nextPass !== null && nextPass.trim() !== "") {
+                const nextPass = prompt(`Enter new login password (min 6 characters) for ${currentAdmin.username || key}:`, String(currentAdmin.password || ''));
+                if (nextPass !== null && nextPass !== "") {
+                    if (nextPass.length < 6) {
+                        showFeedback("Admin password must be at least 6 characters long.", true, adminFeedbackEl);
+                        return;
+                    }
                     update(ref(db, 'webAdmins/' + key), { password: nextPass })
                         .then(() => showFeedback(`Updated password for ${currentAdmin.username || key}.`, false, adminFeedbackEl))
                         .catch((err) => showFeedback("Update failed: " + err.message, true, adminFeedbackEl));
@@ -470,68 +558,61 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- 6. SYNC STATUS CIRCLE & DISPLAY BOX LISTENER ---
+    // --- 6. SYNC STATUS CIRCLE & DISPLAY BOX LISTENER (SAFE DOM RENDERING) ---
     const commandsRef = ref(db, 'commands/');
     onValue(commandsRef, (snapshot) => {
         const data = snapshot.val();
         if (!data) return;
 
-        const getLatestFromNode = (nodeData) => {
-            if (!nodeData) return null;
-            const keys = Object.keys(nodeData);
-            const lastKey = keys[keys.length - 1];
-            return nodeData[lastKey];
-        };
-
-        const lastFail = getLatestFromNode(data.syncfail);
-        const lastSuccess = getLatestFromNode(data.syncsuccess);
-
-        const failStamp = lastFail ? parseDateTime(lastFail.date, lastFail.time) : 0;
-        const successStamp = lastSuccess ? parseDateTime(lastSuccess.date, lastSuccess.time) : 0;
+        const { status, lastFail, lastSuccess, failTime, successTime } = getSyncState(data);
 
         if (statusCircle) {
             statusCircle.classList.remove('gray', 'green', 'red');
-            if (data.syncStatus === "sync_success" || (successStamp >= failStamp && successStamp > 0)) {
-                statusCircle.classList.add('green');
-            } else if (data.syncStatus === "sync_fail" || (failStamp > successStamp && failStamp > 0)) {
-                statusCircle.classList.add('red');
-            } else {
-                statusCircle.classList.add('gray');
-            }
+            statusCircle.classList.add(status);
         }
 
         if (!syncDisplayBox) return;
 
-        if (failStamp > successStamp && lastFail) {
+        if (failTime > successTime && lastFail) {
             syncDisplayBox.style.color = "#ff4d4d";
-            const html = `<strong>FAILED:</strong> ${String(lastFail.reason || 'Unknown')}<br>USER: ${String(lastFail.firstName || 'Unknown')} (${String(lastFail.uid || 'N/A')})<br>${String(lastFail.date || '-')} | ${String(lastFail.time || '-')}`;
-            safeSetHTML(syncDisplayBox, html);
+            const strong = document.createElement('strong');
+            strong.textContent = 'FAILED: ';
+            const line1 = document.createTextNode(String(lastFail.reason || 'Unknown'));
+            const br1 = document.createElement('br');
+            const line2 = document.createTextNode(`USER: ${String(lastFail.firstName || 'Unknown')} (${String(lastFail.uid || 'N/A')})`);
+            const br2 = document.createElement('br');
+            const line3 = document.createTextNode(`${formatDateDisplay(lastFail.date)} | ${String(lastFail.time || '-')}`);
+            syncDisplayBox.replaceChildren(strong, line1, br1, line2, br2, line3);
         } else if (lastSuccess) {
             syncDisplayBox.style.color = "#00ff88";
-            const html = `<strong>${String(lastSuccess.status || 'Sync Complete')}</strong><br>DATE: ${String(lastSuccess.date || '-')}<br>TIME: ${String(lastSuccess.time || '-')}`;
-            safeSetHTML(syncDisplayBox, html);
+            const strong = document.createElement('strong');
+            strong.textContent = String(lastSuccess.status || 'Sync Complete');
+            const br1 = document.createElement('br');
+            const line1 = document.createTextNode(`DATE: ${formatDateDisplay(lastSuccess.date)}`);
+            const br2 = document.createElement('br');
+            const line2 = document.createTextNode(`TIME: ${String(lastSuccess.time || '-')}`);
+            syncDisplayBox.replaceChildren(strong, br1, line1, br2, line2);
         }
     });
 
     // --- 7. EXPORT CSV ---
     if (exportBtn) {
         exportBtn.addEventListener('click', () => {
-            const lines = ['Name,Email,UID,Password,Points'];
-            filteredUIDs.forEach((uid) => {
+            const rows = filteredUIDs.map((uid) => {
                 const u = accountsCache[uid] || {};
-                const name = String(u.name || '').replace(/"/g, '""');
-                const email = String(u.email || '').replace(/"/g, '""');
-                const pass = String(u.password ?? '').replace(/"/g, '""');
-                const pts = u.points ?? 0;
-                lines.push(`"${name}","${email}","${uid}","${pass}",${pts}`);
+                return [u.name || '', u.email || '', uid, u.password ?? '', Number(u.points ?? 0)];
             });
-            const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'supplify_accounts.csv';
-            a.click();
-            URL.revokeObjectURL(url);
+            downloadCsv('supplify_rfid_accounts.csv', ['Name', 'Email', 'UID', 'Password', 'Points'], rows);
+        });
+    }
+
+    if (exportAdminsBtn) {
+        exportAdminsBtn.addEventListener('click', () => {
+            const rows = filteredAdminKeys.map((key) => {
+                const adm = webAdminsCache[key] || {};
+                return [adm.username || key, adm.email || '', adm.password ?? '', adm.createdAt || ''];
+            });
+            downloadCsv('supplify_web_admins.csv', ['Username', 'Email', 'Password', 'CreatedAt'], rows);
         });
     }
 });

@@ -1,45 +1,8 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
-import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
-
-// --- 1. CONFIGURATION ---
-const firebaseConfig = {
-    apiKey: "AIzaSyDD3uJlu_rT4DA4jnjyzixRRYc_69r8SL0",
-    authDomain: "stationery-dispenser.firebaseapp.com",
-    projectId: "stationery-dispenser",
-    storageBucket: "stationery-dispenser.firebasestorage.app",
-    messagingSenderId: "57000519693",
-    appId: "1:57000519693:web:748481665644e9c5124d44",
-    databaseURL: "https://stationery-dispenser-default-rtdb.asia-southeast1.firebasedatabase.app"
-};
-
-// --- 2. INITIALIZATION ---
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getDatabase(app);
-
-function formatDateDisplay(dateStr) {
-    if (!dateStr) return 'N/A';
-    const dateParts = dateStr.split('/');
-    if (dateParts.length === 3) {
-        return `${dateParts[1].padStart(2, '0')}/${dateParts[0].padStart(2, '0')}/${dateParts[2]}`;
-    }
-    return dateStr;
-}
-
-function normalizeForSort(dateStr, timeStr) {
-    if (!dateStr) return "0000-00-00T00:00:00";
-    if (dateStr.includes('/')) {
-        const parts = dateStr.split('/');
-        if (parts.length < 3) return "0000-00-00T00:00:00";
-        const day = parts[0].padStart(2, '0');
-        const month = parts[1].padStart(2, '0');
-        const year = parts[2];
-        const time = (timeStr || '00:00:00').padStart(8, '0');
-        return `${year}-${month}-${day}T${time}`;
-    }
-    return `${dateStr}T${timeStr || '00:00:00'}`;
-}
+import {
+    auth, db,
+    onAuthStateChanged, signOut, ref, onValue,
+    parseDateTime, formatDateDisplay, downloadCsv
+} from "./common.js";
 
 document.addEventListener('DOMContentLoaded', () => {
     const logoutBtn = document.getElementById('logoutBtn');
@@ -65,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- 3. LOAD ONLY loginHistory AND offlineLogs (NOT FULL DB ROOT) ---
+    // --- 3. LOAD ONLY loginHistory AND offlineLogs ---
     let onlineLogs = null;
     let offlineLogs = null;
     let currentFiltered = [];
@@ -82,7 +45,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const entry = logGroup[key];
                 if (!entry || typeof entry !== 'object') return;
                 const fingerprint = `${entry.uid}-${entry.date}-${entry.time}`;
-                logsMap.set(fingerprint, { ...entry, isOffline });
+                // Prefer online record when the same event exists in both online and offline logs
+                if (!logsMap.has(fingerprint) || !isOffline) {
+                    logsMap.set(fingerprint, { ...entry, isOffline });
+                }
             });
         };
 
@@ -90,11 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
         processLogs(offlineLogs, true);
 
         const combinedLogs = Array.from(logsMap.values());
-        combinedLogs.sort((a, b) => {
-            const isoA = normalizeForSort(a.date, a.time);
-            const isoB = normalizeForSort(b.date, b.time);
-            return isoB.localeCompare(isoA);
-        });
+        combinedLogs.sort((a, b) => parseDateTime(b.date, b.time) - parseDateTime(a.date, a.time));
 
         const query = (searchInput ? searchInput.value : '').trim().toLowerCase();
         currentFiltered = combinedLogs.filter((entry) => {
@@ -157,22 +119,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (exportBtn) {
         exportBtn.addEventListener('click', () => {
-            const lines = ['Name,UID,Date,Time,Mode'];
-            currentFiltered.forEach((entry) => {
-                const name = String(entry.name || 'Unknown').replace(/"/g, '""');
-                const uid = String(entry.uid || 'N/A').replace(/"/g, '""');
-                const date = formatDateDisplay(entry.date);
-                const time = entry.time || '-';
-                const mode = entry.isOffline ? 'Offline' : 'Online';
-                lines.push(`"${name}","${uid}","${date}","${time}","${mode}"`);
-            });
-            const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'supplify_login_history.csv';
-            a.click();
-            URL.revokeObjectURL(url);
+            const rows = currentFiltered.map((entry) => [
+                entry.name || 'Unknown',
+                entry.uid || 'N/A',
+                formatDateDisplay(entry.date),
+                entry.time || '-',
+                entry.isOffline ? 'Offline' : 'Online'
+            ]);
+            downloadCsv('supplify_login_history.csv', ['Name', 'UID', 'Date', 'Time', 'Mode'], rows);
         });
     }
 });

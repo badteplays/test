@@ -1,49 +1,16 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
-import { getDatabase, ref, onValue, push, get, update } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+import {
+    auth, db, MAX_POINTS,
+    onAuthStateChanged, signOut, ref, onValue, push, get, runTransaction,
+    normalizeUid, parseWholeNumber, parseDateTime, formatDateDisplay, nowStamp, downloadCsv
+} from "./common.js";
 
-// --- 1. CONFIGURATION ---
-const firebaseConfig = {
-    apiKey: "AIzaSyDD3uJlu_rT4DA4jnjyzixRRYc_69r8SL0",
-    authDomain: "stationery-dispenser.firebaseapp.com",
-    projectId: "stationery-dispenser",
-    storageBucket: "stationery-dispenser.firebasestorage.app",
-    messagingSenderId: "57000519693",
-    appId: "1:57000519693:web:748481665644e9c5124d44",
-    databaseURL: "https://stationery-dispenser-default-rtdb.asia-southeast1.firebasedatabase.app"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getDatabase(app);
-
-function formatDateDisplay(dateStr) {
-    if (!dateStr) return '-';
-    if (dateStr.includes('/')) {
-        const parts = dateStr.split('/');
-        if (parts.length === 3) {
-            return `${parts[1].padStart(2, '0')}/${parts[0].padStart(2, '0')}/${parts[2]}`;
-        }
-    }
-    return dateStr;
-}
-
-function parseDateTime(dateStr, timeStr) {
-    if (!dateStr) return 0;
-    let day = 1, month = 1, year = 1970;
-    if (dateStr.includes('/')) {
-        const parts = dateStr.split('/').map(Number);
-        if (parts.length === 3) {
-            [day, month, year] = parts;
-        }
-    } else if (dateStr.includes('-')) {
-        const parts = dateStr.split('-').map(Number);
-        if (parts.length === 3) {
-            [year, month, day] = parts;
-        }
-    }
-    const timeParts = (timeStr || '00:00:00').split(':').map(Number);
-    return new Date(year, (month || 1) - 1, day || 1, timeParts[0] || 0, timeParts[1] || 0, timeParts[2] || 0).getTime();
+function extractPointsValue(entry) {
+    if (!entry || typeof entry !== 'object') return 0;
+    if (entry.pointsAdded !== undefined) return Number(entry.pointsAdded) || 0;
+    if (entry.pointsEarned !== undefined) return Number(entry.pointsEarned) || 0;
+    if (entry.points !== undefined) return Number(entry.points) || 0;
+    if (entry.pointsDeducted !== undefined) return -(Math.abs(Number(entry.pointsDeducted)) || 0);
+    return 0;
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -53,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('history-search');
     const exportBtn = document.getElementById('export-csv-btn');
 
+    const logPointsForm = document.getElementById('log-points-form');
     const depositNameInput = document.getElementById('deposit-name');
     const depositUidInput = document.getElementById('deposit-uid');
     const depositPointsInput = document.getElementById('deposit-points');
@@ -68,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 feedbackEl.textContent = '';
                 feedbackEl.className = 'points-feedback';
             }
-        }, 4000);
+        }, 4500);
     }
 
     if (menuButton) {
@@ -105,7 +73,8 @@ document.addEventListener('DOMContentLoaded', () => {
             Object.keys(normalData).forEach((key) => {
                 const entry = normalData[key];
                 if (!entry || typeof entry !== 'object') return;
-                const fingerprint = `${entry.uid}-${entry.date}-${entry.time}`;
+                const pts = extractPointsValue(entry);
+                const fingerprint = `${entry.uid}-${entry.date}-${entry.time}-${pts}-${key}`;
                 transactionMap.set(fingerprint, { id: key, ...entry, isOffline: false });
             });
         }
@@ -114,8 +83,12 @@ document.addEventListener('DOMContentLoaded', () => {
             Object.keys(offlineData).forEach((key) => {
                 const entry = offlineData[key];
                 if (!entry || typeof entry !== 'object') return;
-                const fingerprint = `${entry.uid}-${entry.date}-${entry.time}`;
-                if (!transactionMap.has(fingerprint)) {
+                const pts = extractPointsValue(entry);
+                const dupOnline = Array.from(transactionMap.values()).some(
+                    (e) => !e.isOffline && e.uid === entry.uid && e.date === entry.date && e.time === entry.time && extractPointsValue(e) === pts
+                );
+                if (!dupOnline) {
+                    const fingerprint = `off-${entry.uid}-${entry.date}-${entry.time}-${pts}-${key}`;
                     transactionMap.set(fingerprint, { id: key, ...entry, isOffline: true });
                 }
             });
@@ -143,9 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     tr.style.fontStyle = 'italic';
                 }
 
-                // Support pointsAdded, pointsEarned, points, or fallback pointsDeducted
-                const rawPts = entry.pointsAdded ?? entry.pointsEarned ?? entry.points ?? entry.pointsDeducted ?? 0;
-                const pointsValue = Number(rawPts) || 0;
+                const pointsValue = extractPointsValue(entry);
 
                 const tdName = document.createElement('td');
                 tdName.textContent = `${entry.name || 'Unknown'}${isOffline ? ' (Offline)' : ''}`;
@@ -200,67 +171,77 @@ document.addEventListener('DOMContentLoaded', () => {
         searchInput.addEventListener('input', updateTable);
     }
 
-    if (addPointsLogBtn) {
-        addPointsLogBtn.addEventListener('click', async () => {
-            const name = depositNameInput ? depositNameInput.value.trim() : '';
-            const uid = depositUidInput ? depositUidInput.value.trim().toLowerCase() : '';
-            const pts = parseInt(depositPointsInput ? depositPointsInput.value : '0', 10) || 0;
+    async function handleRecordPoints(event) {
+        if (event) event.preventDefault();
+        const typedName = depositNameInput ? depositNameInput.value.trim() : '';
+        const uid = normalizeUid(depositUidInput ? depositUidInput.value : '');
+        const pts = parseWholeNumber(depositPointsInput ? depositPointsInput.value : '', MAX_POINTS);
 
-            if (!name || !uid || pts <= 0) {
-                showFeedback("Please enter Name, RFID UID, and a positive Points value.", true);
+        if (!uid || pts === null || pts <= 0) {
+            showFeedback(`Please enter a valid RFID UID and a positive Points value (1 to ${MAX_POINTS.toLocaleString()}).`, true);
+            return;
+        }
+
+        try {
+            // Verify the RFID account exists before recording or crediting points
+            const accRef = ref(db, 'accounts/' + uid);
+            const accSnap = await get(accRef);
+            if (!accSnap.exists()) {
+                showFeedback(`UID "${uid}" does not exist in registered accounts. Add the user on the Accounts page first.`, true);
                 return;
             }
 
-            const now = new Date();
-            const dateStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
-            const timeStr = now.toTimeString().slice(0, 8);
-
-            try {
-                await push(ref(db, 'pointshistory'), {
-                    name,
-                    uid,
-                    date: dateStr,
-                    time: timeStr,
-                    pointsAdded: pts
-                });
-
-                // Also credit the account if it exists in accounts/{uid}
-                const accRef = ref(db, 'accounts/' + uid);
-                const snap = await get(accRef);
-                if (snap.exists()) {
-                    const currentPts = Number(snap.val().points) || 0;
-                    await update(accRef, { points: currentPts + pts });
-                }
-
-                showFeedback(`✓ Recorded +${pts} pts for ${name} (${uid})!`, false);
-                if (depositNameInput) depositNameInput.value = '';
-                if (depositUidInput) depositUidInput.value = '';
-                if (depositPointsInput) depositPointsInput.value = '2';
-            } catch (err) {
-                showFeedback("Error recording points: " + err.message, true);
+            const accountData = accSnap.val() || {};
+            const registeredName = String(accountData.name || '').trim();
+            if (typedName && registeredName && typedName.toLowerCase() !== registeredName.toLowerCase()) {
+                showFeedback(`Name mismatch: UID "${uid}" belongs to "${registeredName}", not "${typedName}".`, true);
+                return;
             }
-        });
+
+            const finalName = registeredName || typedName || uid;
+            const { date: dateStr, time: timeStr } = nowStamp();
+
+            // Atomically increment the user's points balance using a Firebase transaction
+            const pointsRef = ref(db, `accounts/${uid}/points`);
+            await runTransaction(pointsRef, (currentPoints) => {
+                const cur = Number(currentPoints) || 0;
+                return Math.min(MAX_POINTS, cur + pts);
+            });
+
+            await push(ref(db, 'pointshistory'), {
+                name: finalName,
+                uid,
+                date: dateStr,
+                time: timeStr,
+                pointsAdded: pts
+            });
+
+            showFeedback(`✓ Recorded +${pts} pts for ${finalName} (${uid})!`, false);
+            if (depositNameInput) depositNameInput.value = '';
+            if (depositUidInput) depositUidInput.value = '';
+            if (depositPointsInput) depositPointsInput.value = '';
+        } catch (err) {
+            showFeedback("Error recording points: " + err.message, true);
+        }
+    }
+
+    if (logPointsForm) {
+        logPointsForm.addEventListener('submit', handleRecordPoints);
+    } else if (addPointsLogBtn) {
+        addPointsLogBtn.addEventListener('click', handleRecordPoints);
     }
 
     if (exportBtn) {
         exportBtn.addEventListener('click', () => {
-            const lines = ['Name,UID,Date,Time,Points,Mode'];
-            currentFiltered.forEach((entry) => {
-                const name = String(entry.name || 'Unknown').replace(/"/g, '""');
-                const uid = String(entry.uid || 'N/A').replace(/"/g, '""');
-                const date = formatDateDisplay(entry.date);
-                const time = entry.time || '-';
-                const pts = Number(entry.pointsAdded ?? entry.pointsEarned ?? entry.points ?? entry.pointsDeducted ?? 0) || 0;
-                const mode = entry.isOffline ? 'Offline' : 'Online';
-                lines.push(`"${name}","${uid}","${date}","${time}",${pts},"${mode}"`);
-            });
-            const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'supplify_points_history.csv';
-            a.click();
-            URL.revokeObjectURL(url);
+            const rows = currentFiltered.map((entry) => [
+                entry.name || 'Unknown',
+                entry.uid || 'N/A',
+                formatDateDisplay(entry.date),
+                entry.time || '-',
+                extractPointsValue(entry),
+                entry.isOffline ? 'Offline' : 'Online'
+            ]);
+            downloadCsv('supplify_points_history.csv', ['Name', 'UID', 'Date', 'Time', 'Points', 'Mode'], rows);
         });
     }
 });

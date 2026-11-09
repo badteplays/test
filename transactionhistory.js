@@ -1,50 +1,8 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
-import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
-
-// --- 1. CONFIGURATION ---
-const firebaseConfig = {
-    apiKey: "AIzaSyDD3uJlu_rT4DA4jnjyzixRRYc_69r8SL0",
-    authDomain: "stationery-dispenser.firebaseapp.com",
-    projectId: "stationery-dispenser",
-    storageBucket: "stationery-dispenser.firebasestorage.app",
-    messagingSenderId: "57000519693",
-    appId: "1:57000519693:web:748481665644e9c5124d44",
-    databaseURL: "https://stationery-dispenser-default-rtdb.asia-southeast1.firebasedatabase.app"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getDatabase(app);
-
-function formatDateDisplay(dateStr) {
-    if (!dateStr) return '-';
-    if (dateStr.includes('/')) {
-        const parts = dateStr.split('/');
-        if (parts.length === 3) {
-            return `${parts[1].padStart(2, '0')}/${parts[0].padStart(2, '0')}/${parts[2]}`;
-        }
-    }
-    return dateStr;
-}
-
-function parseDateTime(dateStr, timeStr) {
-    if (!dateStr) return 0;
-    let day = 1, month = 1, year = 1970;
-    if (dateStr.includes('/')) {
-        const parts = dateStr.split('/').map(Number);
-        if (parts.length === 3) {
-            [day, month, year] = parts;
-        }
-    } else if (dateStr.includes('-')) {
-        const parts = dateStr.split('-').map(Number);
-        if (parts.length === 3) {
-            [year, month, day] = parts;
-        }
-    }
-    const timeParts = (timeStr || '00:00:00').split(':').map(Number);
-    return new Date(year, (month || 1) - 1, day || 1, timeParts[0] || 0, timeParts[1] || 0, timeParts[2] || 0).getTime();
-}
+import {
+    auth, db,
+    onAuthStateChanged, signOut, ref, onValue,
+    parseDateTime, formatDateDisplay, downloadCsv
+} from "./common.js";
 
 document.addEventListener('DOMContentLoaded', () => {
     const logoutBtn = document.getElementById('logoutBtn');
@@ -87,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
             Object.keys(normalData).forEach((key) => {
                 const entry = normalData[key];
                 if (!entry || typeof entry !== 'object') return;
-                const fingerprint = `${entry.uid}-${entry.date}-${entry.time}`;
+                const fingerprint = `${entry.uid}-${entry.date}-${entry.time}-${entry.item || ''}-${entry.pointsDeducted || 0}`;
                 transactionMap.set(fingerprint, { id: key, ...entry, isOffline: false });
             });
         }
@@ -96,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
             Object.keys(offlineData).forEach((key) => {
                 const entry = offlineData[key];
                 if (!entry || typeof entry !== 'object') return;
-                const fingerprint = `${entry.uid}-${entry.date}-${entry.time}`;
+                const fingerprint = `${entry.uid}-${entry.date}-${entry.time}-${entry.item || ''}-${entry.pointsDeducted || 0}`;
                 if (!transactionMap.has(fingerprint)) {
                     transactionMap.set(fingerprint, { id: key, ...entry, isOffline: true });
                 }
@@ -188,24 +146,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (exportBtn) {
         exportBtn.addEventListener('click', () => {
-            const lines = ['Name,UID,Date,Time,Item,PointsDeducted,Mode'];
-            currentFiltered.forEach((entry) => {
-                const name = String(entry.name || 'Unknown').replace(/"/g, '""');
-                const uid = String(entry.uid || 'N/A').replace(/"/g, '""');
-                const date = formatDateDisplay(entry.date);
-                const time = entry.time || '-';
-                const item = String(entry.item || '-').replace(/"/g, '""');
-                const pts = Number(entry.pointsDeducted) || 0;
-                const mode = entry.isOffline ? 'Offline' : 'Online';
-                lines.push(`"${name}","${uid}","${date}","${time}","${item}",-${pts},"${mode}"`);
-            });
-            const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'supplify_transaction_history.csv';
-            a.click();
-            URL.revokeObjectURL(url);
+            const rows = currentFiltered.map((entry) => [
+                entry.name || 'Unknown',
+                entry.uid || 'N/A',
+                formatDateDisplay(entry.date),
+                entry.time || '-',
+                entry.item || '-',
+                -(Math.abs(Number(entry.pointsDeducted)) || 0),
+                entry.isOffline ? 'Offline' : 'Online'
+            ]);
+            downloadCsv(
+                'supplify_transaction_history.csv',
+                ['Name', 'UID', 'Date', 'Time', 'Item', 'PointsDeducted', 'Mode'],
+                rows
+            );
         });
     }
 });

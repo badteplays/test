@@ -1,21 +1,7 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
-import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
-
-// --- 1. CONFIGURATION ---
-const firebaseConfig = {
-    apiKey: "AIzaSyDD3uJlu_rT4DA4jnjyzixRRYc_69r8SL0",
-    authDomain: "stationery-dispenser.firebaseapp.com",
-    projectId: "stationery-dispenser",
-    storageBucket: "stationery-dispenser.firebasestorage.app",
-    messagingSenderId: "57000519693",
-    appId: "1:57000519693:web:748481665644e9c5124d44",
-    databaseURL: "https://stationery-dispenser-default-rtdb.asia-southeast1.firebasedatabase.app"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getDatabase(app);
+import {
+    auth, db, MAX_POINTS,
+    onAuthStateChanged, signOut, ref, update, onValue, parseWholeNumber
+} from "./common.js";
 
 document.addEventListener('DOMContentLoaded', () => {
     const editBtn = document.getElementById('edit');
@@ -23,6 +9,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const itemsContainer = document.querySelector('.items-container');
     const menuButton = document.getElementById('menu-button');
     const feedbackEl = document.getElementById('save-feedback');
+
+    let dataLoaded = false;
+    if (editBtn) {
+        editBtn.disabled = true;
+    }
 
     function showFeedback(msg, isError = false) {
         if (!feedbackEl) return;
@@ -62,6 +53,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const pricesRef = ref(db, 'inventory/');
     onValue(pricesRef, (snapshot) => {
         const data = snapshot.val();
+        dataLoaded = true;
+        if (editBtn) editBtn.disabled = false;
+
+        // Do not clobber unsaved edits while the admin is actively editing
+        const currentlyEditing = editBtn && editBtn.textContent === 'DONE';
+        if (currentlyEditing) return;
+
         if (data) {
             updateUI('PEN', data.pen);
             updateUI('MARKER', data.marker);
@@ -70,16 +68,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }, (error) => {
         console.error("Error fetching prices:", error);
+        showFeedback("Error loading prices from Firebase.", true);
     });
 
     function updateUI(itemName, value) {
         document.querySelectorAll('.item-card').forEach((card) => {
             const nameOnPage = card.querySelector('.item-name').innerText.trim().toUpperCase().replace(/\n/g, ' ');
             if (nameOnPage === itemName) {
-                const parsed = parseInt(value, 10) || 0;
+                const parsed = parseInt(value, 10);
+                const safeVal = Number.isNaN(parsed) ? 0 : parsed;
                 const input = card.querySelector('.price-input');
-                if (input) input.value = parsed;
-                updateArrowVisuals(card, parsed);
+                if (input) input.value = safeVal;
+                updateArrowVisuals(card, safeVal);
             }
         });
     }
@@ -93,16 +93,26 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- 3. EDIT / DONE TOGGLE & SAVE ---
     if (editBtn) {
         editBtn.addEventListener('click', () => {
-            const isEditing = editBtn.textContent === 'EDIT';
+            if (!dataLoaded) {
+                showFeedback("Please wait for current prices to finish loading.", true);
+                return;
+            }
+
+            const isStartingEdit = editBtn.textContent === 'EDIT';
             const allInputs = document.querySelectorAll('.price-input');
 
-            if (!isEditing) {
-                const penPrice = findValueInHTML('PEN', '.price-input', 10);
-                const markerPrice = findValueInHTML('MARKER', '.price-input', 10);
-                const paperPrice = findValueInHTML('INTERMEDIATE PAPER', '.price-input', 10);
-                const shortbondpaperPrice = findValueInHTML('SHORT BOND PAPER', '.price-input', 10);
+            if (!isStartingEdit) {
+                const penPrice = readValidatedValue('PEN');
+                const markerPrice = readValidatedValue('MARKER');
+                const paperPrice = readValidatedValue('INTERMEDIATE PAPER');
+                const shortbondpaperPrice = readValidatedValue('SHORT BOND PAPER');
 
-                set(ref(db, 'inventory/'), {
+                if (penPrice === null || markerPrice === null || paperPrice === null || shortbondpaperPrice === null) {
+                    showFeedback(`Please enter a valid whole number (0 to ${MAX_POINTS.toLocaleString()}) for every item.`, true);
+                    return;
+                }
+
+                update(ref(db, 'inventory'), {
                     pen: penPrice,
                     marker: markerPrice,
                     yellowpaper: paperPrice,
@@ -115,27 +125,27 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             allInputs.forEach((input) => {
-                input.disabled = !isEditing;
+                input.disabled = !isStartingEdit;
             });
 
             document.querySelectorAll('.arrow-btn').forEach((arrow) => {
-                arrow.classList.toggle('green', isEditing);
+                arrow.classList.toggle('green', isStartingEdit);
             });
 
-            editBtn.textContent = isEditing ? 'DONE' : 'EDIT';
+            editBtn.textContent = isStartingEdit ? 'DONE' : 'EDIT';
         });
     }
 
-    function findValueInHTML(itemName, selector, fallback = 0) {
-        let val = fallback;
+    function readValidatedValue(itemName) {
+        let rawVal = '';
         document.querySelectorAll('.item-card').forEach((card) => {
             const nameOnPage = card.querySelector('.item-name').innerText.trim().toUpperCase().replace(/\n/g, ' ');
             if (nameOnPage === itemName) {
-                const input = card.querySelector(selector);
-                if (input) val = input.value;
+                const input = card.querySelector('.price-input');
+                if (input) rawVal = input.value;
             }
         });
-        return parseInt(val, 10) || 0;
+        return parseWholeNumber(rawVal, MAX_POINTS);
     }
 
     // --- 4. ARROW CLICK LOGIC ---
@@ -151,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const direction = button.getAttribute('data-dir');
             if (direction === 'up') {
-                currentPrice++;
+                if (currentPrice < MAX_POINTS) currentPrice++;
             } else if (direction === 'down') {
                 if (currentPrice > 0) currentPrice--;
             }

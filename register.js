@@ -1,26 +1,9 @@
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
-import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
-
-// Your web app's Firebase configuration
-const firebaseConfig = {
-    apiKey: "AIzaSyDD3uJlu_rT4DA4jnjyzixRRYc_69r8SL0",
-    authDomain: "stationery-dispenser.firebaseapp.com",
-    projectId: "stationery-dispenser",
-    storageBucket: "stationery-dispenser.firebasestorage.app",
-    messagingSenderId: "57000519693",
-    appId: "1:57000519693:web:748481665644e9c5124d44",
-    databaseURL: "https://stationery-dispenser-default-rtdb.asia-southeast1.firebasedatabase.app"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getDatabase(app);
+import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+import { auth, db, ref, get, set, normalizeUsername, isValidEmail, nowStamp } from "./common.js";
 
 const registerForm = document.getElementById('register-form');
-const submitBtn = document.getElementById('submit');
+const submitBtn = document.getElementById('submit') || document.getElementById('login');
+const usernameInput = document.getElementById('username');
 const emailInput = document.getElementById('email');
 const passwordInput = document.getElementById('new-password') || document.getElementById('password');
 const togglePasswordBtn = document.getElementById('toggle-password');
@@ -47,11 +30,17 @@ if (togglePasswordBtn && passwordInput) {
 async function handleRegister(event) {
     if (event) event.preventDefault();
 
+    const rawUsername = usernameInput ? usernameInput.value.trim() : '';
     const email = emailInput ? emailInput.value.trim() : '';
     const password = passwordInput ? passwordInput.value : '';
 
-    if (!email || !password) {
-        showFeedback("Please enter both an email address and a password.", true);
+    if (!rawUsername || !email || !password) {
+        showFeedback("Please enter a username, email address, and password.", true);
+        return;
+    }
+
+    if (!isValidEmail(email)) {
+        showFeedback("Please enter a valid email address.", true);
         return;
     }
 
@@ -60,27 +49,52 @@ async function handleRegister(event) {
         return;
     }
 
+    const key = normalizeUsername(rawUsername);
+    if (!key) {
+        showFeedback("Username must contain letters or numbers.", true);
+        return;
+    }
+
     if (submitBtn) {
         submitBtn.disabled = true;
         submitBtn.textContent = "CREATING ACCOUNT...";
     }
-    showFeedback("Creating admin account...", false);
+    showFeedback("Checking existing accounts...", false);
 
     try {
-        const username = email.includes('@') ? email.split('@')[0] : email;
-        const key = username.replace(/[.#$/[\]\s]/g, '_').toLowerCase() || ('admin_' + Date.now());
-        const now = new Date();
-        const createdAt = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+        // Prevent overwriting an existing admin with the same username or email
+        const snap = await get(ref(db, 'webAdmins'));
+        const existingAdmins = snap.val() || {};
 
-        // Save in Firebase Realtime Database so it appears in accounts.html and can be edited/deleted
+        const lowerUser = rawUsername.toLowerCase();
+        const lowerEmail = email.toLowerCase();
+        const duplicate = Object.keys(existingAdmins).find((k) => {
+            const adm = existingAdmins[k] || {};
+            return (
+                k.toLowerCase() === key ||
+                String(adm.username || '').toLowerCase() === lowerUser ||
+                String(adm.email || '').toLowerCase() === lowerEmail
+            );
+        });
+
+        if (duplicate) {
+            showFeedback("An admin account with that username or email already exists.", true);
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "CREATE ACCOUNT";
+            }
+            return;
+        }
+
+        const { date: createdAt } = nowStamp();
         await set(ref(db, 'webAdmins/' + key), {
-            username,
+            username: rawUsername,
             email,
             password,
             createdAt
         });
 
-        // Also register in Firebase Auth in the background if not already registered
+        // Best-effort Firebase Auth registration
         await createUserWithEmailAndPassword(auth, email, password).catch(() => {});
 
         showFeedback("Account created! Redirecting to sign in...", false);

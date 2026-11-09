@@ -16,13 +16,29 @@
 
         <form class="login-form" id="register-form">
             <div class="input-group">
-                <label for="username" class="sr-only">Email Address</label>
+                <label for="username" class="sr-only">Admin Username</label>
+                <input
+                    type="text"
+                    placeholder="USERNAME (E.G. ADMIN2)"
+                    id="username"
+                    name="username"
+                    autocomplete="username"
+                    spellcheck="false"
+                    autocorrect="off"
+                    autocapitalize="none"
+                    enterkeyhint="next"
+                    required
+                >
+            </div>
+
+            <div class="input-group">
+                <label for="email" class="sr-only">Email Address</label>
                 <input
                     type="email"
                     placeholder="EMAIL ADDRESS"
-                    id="username"
+                    id="email"
                     name="email"
-                    autocomplete="username"
+                    autocomplete="email"
                     spellcheck="false"
                     autocorrect="off"
                     autocapitalize="none"
@@ -48,7 +64,7 @@
 
             <div id="register-feedback" class="form-feedback" role="alert" aria-live="polite"></div>
 
-            <button type="submit" class="login-btn" id="login">REGISTER</button>
+            <button type="submit" class="login-btn" id="submit">CREATE ACCOUNT</button>
 
             <div class="auth-links">
                 <a href="login.html">Back to Sign In</a>

@@ -1,22 +1,8 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
-import { getDatabase, ref, onValue, push } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
-
-// Your Firebase configuration
-const firebaseConfig = {
-    apiKey: "AIzaSyDD3uJlu_rT4DA4jnjyzixRRYc_69r8SL0",
-    authDomain: "stationery-dispenser.firebaseapp.com",
-    projectId: "stationery-dispenser",
-    storageBucket: "stationery-dispenser.firebasestorage.app",
-    messagingSenderId: "57000519693",
-    appId: "1:57000519693:web:748481665644e9c5124d44",
-    databaseURL: "https://stationery-dispenser-default-rtdb.asia-southeast1.firebasedatabase.app"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getDatabase(app);
+import {
+    auth, db,
+    onAuthStateChanged, signOut, ref, onValue, push, set,
+    parseDateTime, formatDateDisplay, nowStamp, downloadCsv, getSyncState
+} from "./common.js";
 
 // --- 1. SESSION CHECK ---
 onAuthStateChanged(auth, (user) => {
@@ -25,42 +11,15 @@ onAuthStateChanged(auth, (user) => {
     }
 });
 
-// Helper: parse DD/MM/YYYY or YYYY-MM-DD + HH:mm:ss into a sortable timestamp
-function parseDateTime(dateStr, timeStr) {
-    if (!dateStr) return 0;
-    let day = 1, month = 1, year = 1970;
-    if (dateStr.includes('/')) {
-        const parts = dateStr.split('/').map(Number);
-        if (parts.length === 3) {
-            [day, month, year] = parts;
-        }
-    } else if (dateStr.includes('-')) {
-        const parts = dateStr.split('-').map(Number);
-        if (parts.length === 3) {
-            [year, month, day] = parts;
-        }
-    }
-    const timeParts = (timeStr || '00:00:00').split(':').map(Number);
-    return new Date(year, (month || 1) - 1, day || 1, timeParts[0] || 0, timeParts[1] || 0, timeParts[2] || 0).getTime();
-}
-
-function formatDateDisplay(dateStr) {
-    if (!dateStr) return 'N/A';
-    if (dateStr.includes('/')) {
-        const parts = dateStr.split('/');
-        if (parts.length === 3) {
-            return `${parts[1].padStart(2, '0')}/${parts[0].padStart(2, '0')}/${parts[2]}`;
-        }
-    }
-    return dateStr;
-}
-
 document.addEventListener('DOMContentLoaded', () => {
     const logoutBtn = document.getElementById('logoutBtn');
     const menuButton = document.getElementById('menu-button');
     const uidTableBody = document.getElementById('uid-table-body');
     const notifsTableBody = document.getElementById('notifs-table-body');
+    const uidHeading = document.getElementById('uid-table-heading');
+    const notifsHeading = document.getElementById('notifs-table-heading');
     const searchInput = document.getElementById('admin-search');
+    const addNotifForm = document.getElementById('add-notif-form');
     const newNotifInput = document.getElementById('new-notif-input');
     const addNotifBtn = document.getElementById('add-notif-btn');
     const exportBtn = document.getElementById('export-admin-btn');
@@ -104,7 +63,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!group || typeof group !== 'object') return;
             Object.keys(group).forEach((k) => {
                 const t = group[k];
-                if (t) map.add(`${t.uid}-${t.date}-${t.time}-${t.item}`);
+                if (t && typeof t === 'object') {
+                    map.add(`${t.uid}-${t.date}-${t.time}-${t.item || ''}-${t.pointsDeducted || 0}`);
+                }
             });
         };
         addGroup(transactionsData);
@@ -171,25 +132,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!syncStatusCircle || !commandsData) return;
         syncStatusCircle.classList.remove('gray', 'green', 'red');
 
-        const getLast = (obj) => {
-            if (!obj) return null;
-            const keys = Object.keys(obj);
-            return keys.length ? obj[keys[keys.length - 1]] : null;
-        };
+        const { status, lastFail, lastSuccess } = getSyncState(commandsData);
+        syncStatusCircle.classList.add(status);
 
-        const lastFail = getLast(commandsData.syncfail);
-        const lastSuccess = getLast(commandsData.syncsuccess);
-        const failTime = lastFail ? parseDateTime(lastFail.date, lastFail.time) : 0;
-        const successTime = lastSuccess ? parseDateTime(lastSuccess.date, lastSuccess.time) : 0;
-
-        if (commandsData.syncStatus === 'sync_fail' || (failTime > successTime && failTime > 0)) {
-            syncStatusCircle.classList.add('red');
+        if (status === 'red') {
             syncStatusCircle.title = `Last Sync Failed (${lastFail?.reason || 'Error'})`;
-        } else if (commandsData.syncStatus === 'sync_success' || successTime > 0) {
-            syncStatusCircle.classList.add('green');
-            syncStatusCircle.title = `Last Sync Successful (${lastSuccess?.date || ''} ${lastSuccess?.time || ''})`;
+        } else if (status === 'green') {
+            syncStatusCircle.title = `Last Sync Successful (${formatDateDisplay(lastSuccess?.date)} ${lastSuccess?.time || ''})`;
         } else {
-            syncStatusCircle.classList.add('gray');
+            syncStatusCircle.title = 'Dispenser Sync Status';
         }
     }
 
@@ -198,18 +149,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const map = new Map();
 
         const collect = (group, isOffline) => {
-            if (!group) return;
+            if (!group || typeof group !== 'object') return;
             Object.keys(group).forEach((k) => {
                 const entry = group[k];
-                if (!entry) return;
+                if (!entry || typeof entry !== 'object') return;
                 const fp = `${entry.uid}-${entry.date}-${entry.time}`;
-                map.set(fp, {
-                    uid: entry.uid || 'N/A',
-                    name: entry.name || 'Unknown',
-                    date: entry.date || '',
-                    time: entry.time || '-',
-                    isOffline
-                });
+                // Prefer online log when both exist
+                if (!map.has(fp) || !isOffline) {
+                    map.set(fp, {
+                        uid: String(entry.uid ?? 'N/A'),
+                        name: String(entry.name ?? 'Unknown'),
+                        date: String(entry.date ?? ''),
+                        time: String(entry.time ?? '-'),
+                        isOffline
+                    });
+                }
             });
         };
 
@@ -224,12 +178,18 @@ document.addEventListener('DOMContentLoaded', () => {
         currentUidRows = all.filter((row) => {
             if (!query) return true;
             return (
-                row.uid.toLowerCase().includes(query) ||
-                row.name.toLowerCase().includes(query) ||
+                String(row.uid).toLowerCase().includes(query) ||
+                String(row.name).toLowerCase().includes(query) ||
                 formatDateDisplay(row.date).toLowerCase().includes(query) ||
-                row.date.toLowerCase().includes(query)
+                String(row.date).toLowerCase().includes(query)
             );
         });
+
+        if (uidHeading) {
+            uidHeading.textContent = currentUidRows.length > 100
+                ? `RECENT RFID / USER ACTIVITY (LATEST 100 OF ${currentUidRows.length})`
+                : 'RECENT RFID / USER ACTIVITY';
+        }
 
         uidTableBody.innerHTML = '';
         if (currentUidRows.length === 0) {
@@ -268,14 +228,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const notifs = [];
 
         // 1. Custom admin notifications
-        if (customNotifsData) {
+        if (customNotifsData && typeof customNotifsData === 'object') {
             Object.keys(customNotifsData).forEach((k) => {
                 const n = customNotifsData[k];
                 if (n && n.message) {
                     notifs.push({
-                        message: n.message,
-                        date: n.date || '',
-                        time: n.time || '-',
+                        id: k,
+                        isCustom: true,
+                        message: String(n.message),
+                        date: String(n.date ?? ''),
+                        time: String(n.time ?? '-'),
                         severity: n.severity || 'info'
                     });
                 }
@@ -283,14 +245,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // 2. Sync failure alerts from commands/syncfail
-        if (commandsData && commandsData.syncfail) {
+        if (commandsData && commandsData.syncfail && typeof commandsData.syncfail === 'object') {
             Object.keys(commandsData.syncfail).forEach((k) => {
                 const entry = commandsData.syncfail[k];
                 if (entry) {
                     notifs.push({
                         message: `Sync Failed: ${entry.reason || 'Error'} (${entry.firstName || 'User'} - ${entry.uid || 'N/A'})`,
-                        date: entry.date || '',
-                        time: entry.time || '-',
+                        date: String(entry.date ?? ''),
+                        time: String(entry.time ?? '-'),
                         severity: 'error'
                     });
                 }
@@ -298,14 +260,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // 3. Sync success alerts from commands/syncsuccess
-        if (commandsData && commandsData.syncsuccess) {
+        if (commandsData && commandsData.syncsuccess && typeof commandsData.syncsuccess === 'object') {
             Object.keys(commandsData.syncsuccess).forEach((k) => {
                 const entry = commandsData.syncsuccess[k];
                 if (entry) {
                     notifs.push({
                         message: `Mega Sync Complete`,
-                        date: entry.date || '',
-                        time: entry.time || '-',
+                        date: String(entry.date ?? ''),
+                        time: String(entry.time ?? '-'),
                         severity: 'success'
                     });
                 }
@@ -313,14 +275,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // 4. Offline transactions synced
-        if (offTransData) {
+        if (offTransData && typeof offTransData === 'object') {
             Object.keys(offTransData).forEach((k) => {
                 const entry = offTransData[k];
                 if (entry) {
                     notifs.push({
                         message: `Offline Dispense: ${entry.item || 'Item'} by ${entry.name || entry.uid || 'User'} (-${entry.pointsDeducted || 0} pts)`,
-                        date: entry.date || '',
-                        time: entry.time || '-',
+                        date: String(entry.date ?? ''),
+                        time: String(entry.time ?? '-'),
                         severity: 'warn'
                     });
                 }
@@ -333,11 +295,17 @@ document.addEventListener('DOMContentLoaded', () => {
         currentNotifRows = notifs.filter((n) => {
             if (!query) return true;
             return (
-                n.message.toLowerCase().includes(query) ||
+                String(n.message).toLowerCase().includes(query) ||
                 formatDateDisplay(n.date).toLowerCase().includes(query) ||
-                n.date.toLowerCase().includes(query)
+                String(n.date).toLowerCase().includes(query)
             );
         });
+
+        if (notifsHeading) {
+            notifsHeading.textContent = currentNotifRows.length > 100
+                ? `SYSTEM NOTIFICATIONS & ALERTS (LATEST 100 OF ${currentNotifRows.length})`
+                : 'SYSTEM NOTIFICATIONS & ALERTS';
+        }
 
         notifsTableBody.innerHTML = '';
         if (currentNotifRows.length === 0) {
@@ -360,6 +328,27 @@ document.addEventListener('DOMContentLoaded', () => {
             const tdMsg = document.createElement('td');
             tdMsg.textContent = n.message;
 
+            if (n.isCustom && n.id) {
+                const delBtn = document.createElement('button');
+                delBtn.type = 'button';
+                delBtn.textContent = '✕';
+                delBtn.title = 'Delete notice';
+                delBtn.style.marginLeft = '8px';
+                delBtn.style.background = '#ff4d4d';
+                delBtn.style.color = 'white';
+                delBtn.style.border = '1px solid #800';
+                delBtn.style.borderRadius = '3px';
+                delBtn.style.cursor = 'pointer';
+                delBtn.style.fontSize = '0.7rem';
+                delBtn.style.padding = '1px 5px';
+                delBtn.addEventListener('click', () => {
+                    set(ref(db, 'notifications/' + n.id), null).catch((err) => {
+                        console.error('Failed to delete notification:', err);
+                    });
+                });
+                tdMsg.appendChild(delBtn);
+            }
+
             const tdDate = document.createElement('td');
             tdDate.textContent = formatDateDisplay(n.date);
 
@@ -378,41 +367,42 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    if (addNotifBtn && newNotifInput) {
-        addNotifBtn.addEventListener('click', () => {
-            const msg = newNotifInput.value.trim();
-            if (!msg) return;
-            const now = new Date();
-            const dateStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
-            const timeStr = now.toTimeString().slice(0, 8);
+    function handlePostNotification(event) {
+        if (event) event.preventDefault();
+        if (!newNotifInput) return;
+        const msg = newNotifInput.value.trim();
+        if (!msg) return;
+        const { date: dateStr, time: timeStr } = nowStamp();
 
-            push(ref(db, 'notifications'), {
-                message: msg,
-                date: dateStr,
-                time: timeStr,
-                severity: 'info'
-            }).then(() => {
-                newNotifInput.value = '';
-            });
+        if (addNotifBtn) addNotifBtn.disabled = true;
+        push(ref(db, 'notifications'), {
+            message: msg,
+            date: dateStr,
+            time: timeStr,
+            severity: 'info'
+        }).then(() => {
+            newNotifInput.value = '';
+        }).catch((err) => {
+            console.error("Failed to post notification:", err);
+            alert("Failed to post notification: " + err.message);
+        }).finally(() => {
+            if (addNotifBtn) addNotifBtn.disabled = false;
         });
+    }
+
+    if (addNotifForm) {
+        addNotifForm.addEventListener('submit', handlePostNotification);
+    } else if (addNotifBtn) {
+        addNotifBtn.addEventListener('click', handlePostNotification);
     }
 
     if (exportBtn) {
         exportBtn.addEventListener('click', () => {
-            const lines = ['Type,Detail,Date,Time'];
-            currentUidRows.forEach((r) => {
-                lines.push(`"UID Activity","${(r.uid + ' - ' + r.name).replace(/"/g, '""')}","${formatDateDisplay(r.date)}","${r.time}"`);
-            });
-            currentNotifRows.forEach((n) => {
-                lines.push(`"Notification","${n.message.replace(/"/g, '""')}","${formatDateDisplay(n.date)}","${n.time}"`);
-            });
-            const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'admin_activity_notifications.csv';
-            a.click();
-            URL.revokeObjectURL(url);
+            const rows = [
+                ...currentUidRows.map((r) => ['UID Activity', `${r.uid} - ${r.name}`, formatDateDisplay(r.date), r.time]),
+                ...currentNotifRows.map((n) => ['Notification', n.message, formatDateDisplay(n.date), n.time])
+            ];
+            downloadCsv('admin_activity_notifications.csv', ['Type', 'Detail', 'Date', 'Time'], rows);
         });
     }
 });
