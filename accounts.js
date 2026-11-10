@@ -1,11 +1,16 @@
 import {
     auth, db, MAX_POINTS,
-    onAuthStateChanged, signOut, ref, set, onValue, update,
+    onAuthStateChanged, ref, set, onValue, update,
     normalizeUsername, normalizeUid, isValidUid, isValidEmail, isValidPin,
-    parseWholeNumber, formatDateDisplay, nowStamp, downloadCsv, getSyncState
+    parseWholeNumber, formatDateDisplay, nowStamp, downloadCsv, getSyncState,
+    requireAdminSession, logoutAdmin
 } from "./common.js";
 
+requireAdminSession();
+
 document.addEventListener('DOMContentLoaded', () => {
+    if (!requireAdminSession()) return;
+
     const logoutBtn = document.getElementById('logoutBtn');
     const tableBody = document.getElementById('table-body');
     const menuButton = document.getElementById('menu-button');
@@ -58,14 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (logoutBtn) {
-        logoutBtn.addEventListener('click', () => {
-            localStorage.removeItem('supplify_admin_session');
-            signOut(auth).then(() => {
-                window.location.replace("login.html");
-            }).catch(() => {
-                window.location.replace("login.html");
-            });
-        });
+        logoutBtn.addEventListener('click', logoutAdmin);
     }
 
     // --- 2. LOAD DISPENSER / RFID ACCOUNTS DATA ---

@@ -1,10 +1,15 @@
 import {
     auth, db,
-    onAuthStateChanged, signOut, ref, onValue,
-    parseDateTime, formatDateDisplay, downloadCsv
+    onAuthStateChanged, ref, onValue,
+    parseDateTime, formatDateDisplay, downloadCsv,
+    requireAdminSession, logoutAdmin
 } from "./common.js";
 
+requireAdminSession();
+
 document.addEventListener('DOMContentLoaded', () => {
+    if (!requireAdminSession()) return;
+
     const logoutBtn = document.getElementById('logoutBtn');
     const tableBody = document.getElementById('table-body');
     const menuButton = document.getElementById('menu-button');
@@ -18,14 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (logoutBtn) {
-        logoutBtn.addEventListener('click', () => {
-            localStorage.removeItem('supplify_admin_session');
-            signOut(auth).then(() => {
-                window.location.replace("login.html");
-            }).catch(() => {
-                window.location.replace("login.html");
-            });
-        });
+        logoutBtn.addEventListener('click', logoutAdmin);
     }
 
     // --- 3. LOAD ONLY loginHistory AND offlineLogs ---

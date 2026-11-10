@@ -1,8 +1,11 @@
 import {
     auth, db, MAX_POINTS,
-    onAuthStateChanged, signOut, ref, onValue, push, get, runTransaction,
-    normalizeUid, parseWholeNumber, parseDateTime, formatDateDisplay, nowStamp, downloadCsv
+    onAuthStateChanged, ref, onValue, push, get, runTransaction,
+    normalizeUid, parseWholeNumber, parseDateTime, formatDateDisplay, nowStamp, downloadCsv,
+    requireAdminSession, logoutAdmin
 } from "./common.js";
+
+requireAdminSession();
 
 function extractPointsValue(entry) {
     if (!entry || typeof entry !== 'object') return 0;
@@ -46,14 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (logoutBtn) {
-        logoutBtn.addEventListener('click', () => {
-            localStorage.removeItem('supplify_admin_session');
-            signOut(auth).then(() => {
-                window.location.replace("login.html");
-            }).catch(() => {
-                window.location.replace("login.html");
-            });
-        });
+        logoutBtn.addEventListener('click', logoutAdmin);
     }
 
     // --- 2. LOAD POINTS HISTORY (MERGED REAL-TIME) ---

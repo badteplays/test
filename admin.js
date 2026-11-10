@@ -1,10 +1,13 @@
 import {
     auth, db,
-    onAuthStateChanged, signOut, ref, onValue, push, set,
-    parseDateTime, formatDateDisplay, nowStamp, downloadCsv, getSyncState
+    onAuthStateChanged, ref, onValue, push, set,
+    parseDateTime, formatDateDisplay, nowStamp, downloadCsv, getSyncState,
+    requireAdminSession, logoutAdmin
 } from "./common.js";
 
-// --- 1. SESSION CHECK ---
+// --- 1. REQUIRE LOGIN BEFORE ACCESSING ADMIN ---
+requireAdminSession();
+
 onAuthStateChanged(auth, (user) => {
     if (user) {
         console.log("Welcome, Admin:", user.email);
@@ -12,6 +15,8 @@ onAuthStateChanged(auth, (user) => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
+    if (!requireAdminSession()) return;
+
     const logoutBtn = document.getElementById('logoutBtn');
     const menuButton = document.getElementById('menu-button');
     const uidTableBody = document.getElementById('uid-table-body');
@@ -31,14 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const statBottles = document.getElementById('stat-bottles');
 
     if (logoutBtn) {
-        logoutBtn.addEventListener('click', () => {
-            localStorage.removeItem('supplify_admin_session');
-            signOut(auth).then(() => {
-                window.location.replace("login.html");
-            }).catch(() => {
-                window.location.replace("login.html");
-            });
-        });
+        logoutBtn.addEventListener('click', logoutAdmin);
     }
 
     if (menuButton) {

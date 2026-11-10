@@ -1,9 +1,14 @@
 import {
     auth, db, MAX_POINTS,
-    onAuthStateChanged, signOut, ref, update, onValue, parseWholeNumber
+    onAuthStateChanged, ref, update, onValue, parseWholeNumber,
+    requireAdminSession, logoutAdmin
 } from "./common.js";
 
+requireAdminSession();
+
 document.addEventListener('DOMContentLoaded', () => {
+    if (!requireAdminSession()) return;
+
     const editBtn = document.getElementById('edit');
     const logoutBtn = document.getElementById('logoutBtn');
     const itemsContainer = document.querySelector('.items-container');
@@ -180,14 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 5. LOGOUT ---
     if (logoutBtn) {
-        logoutBtn.addEventListener('click', () => {
-            localStorage.removeItem('supplify_admin_session');
-            signOut(auth).then(() => {
-                window.location.replace("login.html");
-            }).catch(() => {
-                window.location.replace("login.html");
-            });
-        });
+        logoutBtn.addEventListener('click', logoutAdmin);
     }
 });
 

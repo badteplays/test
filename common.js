@@ -154,6 +154,52 @@ export function getSyncState(commandsData) {
     return { status, lastFail, lastSuccess, failTime, successTime };
 }
 
+// ---------- Admin Session Guard ----------
+const ALLOWED_PAGES = new Set([
+    'admin.html',
+    'menu.html',
+    'accounts.html',
+    'itemprices.html',
+    'bottlevalue.html',
+    'loginhistory.html',
+    'pointshistory.html',
+    'transactionhistory.html'
+]);
+
+export function getActiveAdminSession() {
+    return sessionStorage.getItem('supplify_admin_session') || localStorage.getItem('supplify_admin_session') || '';
+}
+
+export function setActiveAdminSession(username) {
+    sessionStorage.setItem('supplify_admin_session', username);
+    localStorage.setItem('supplify_admin_session', username);
+}
+
+export function clearActiveAdminSession() {
+    sessionStorage.removeItem('supplify_admin_session');
+    localStorage.removeItem('supplify_admin_session');
+}
+
+export function requireAdminSession() {
+    const sessionUser = getActiveAdminSession();
+    if (!sessionUser) {
+        const currentFile = (window.location.pathname.split('/').pop() || 'admin.html').toLowerCase();
+        const target = ALLOWED_PAGES.has(currentFile) ? currentFile : 'admin.html';
+        window.location.replace(`login.html?redirect=${encodeURIComponent(target)}`);
+        return false;
+    }
+    return true;
+}
+
+export function logoutAdmin() {
+    clearActiveAdminSession();
+    signOut(auth).then(() => {
+        window.location.replace("login.html");
+    }).catch(() => {
+        window.location.replace("login.html");
+    });
+}
+
 export {
     onAuthStateChanged,
     signOut,

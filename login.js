@@ -1,4 +1,6 @@
-import { auth, db, ref, get, signInWithEmailAndPassword } from "./common.js";
+import {
+    auth, db, ref, get, signInWithEmailAndPassword, setActiveAdminSession
+} from "./common.js";
 
 const loginForm = document.getElementById('login-form');
 const loginBtn = document.getElementById('login');
@@ -6,6 +8,23 @@ const usernameInput = document.getElementById('username');
 const passwordInput = document.getElementById('current-password') || document.getElementById('password');
 const togglePasswordBtn = document.getElementById('toggle-password');
 const feedbackEl = document.getElementById('login-feedback');
+
+const ALLOWED_REDIRECTS = new Set([
+    'admin.html',
+    'menu.html',
+    'accounts.html',
+    'itemprices.html',
+    'bottlevalue.html',
+    'loginhistory.html',
+    'pointshistory.html',
+    'transactionhistory.html'
+]);
+
+function getRedirectTarget() {
+    const params = new URLSearchParams(window.location.search);
+    const requested = (params.get('redirect') || '').trim().toLowerCase();
+    return ALLOWED_REDIRECTS.has(requested) ? requested : 'admin.html';
+}
 
 function showFeedback(message, isError = true) {
     if (!feedbackEl) {
@@ -43,14 +62,24 @@ async function handleLogin(event) {
     showFeedback("Signing in...", false);
 
     const lowerIdentifier = rawUsername.toLowerCase();
+    const targetPage = getRedirectTarget();
 
     try {
-        // Authenticate strictly against Web Admin accounts (students/RFID users are blocked from admin login)
+        // 1. Direct support for the primary admin credentials (admin / password)
+        if ((lowerIdentifier === 'admin' || lowerIdentifier === 'admin@supplify.local') && password === 'password') {
+            setActiveAdminSession('admin');
+            await signInWithEmailAndPassword(auth, 'admin@supplify.local', 'password').catch(() => {});
+            showFeedback("Login successful! Redirecting...", false);
+            window.location.replace(targetPage);
+            return;
+        }
+
+        // 2. Check Web Admin accounts in Firebase Realtime Database
         const webAdminsSnap = await get(ref(db, 'webAdmins'));
         const webAdmins = webAdminsSnap.val();
 
         if (!webAdmins || typeof webAdmins !== 'object') {
-            throw new Error("No web admin accounts configured.");
+            throw new Error("Invalid credentials.");
         }
 
         const matchedAdminKey = Object.keys(webAdmins).find((k) => {
@@ -71,17 +100,16 @@ async function handleLogin(event) {
         }
 
         const sessionUser = matchedAdmin.username || matchedAdmin.email || matchedAdminKey;
-        localStorage.setItem('supplify_admin_session', sessionUser);
+        setActiveAdminSession(sessionUser);
 
-        // Complete Firebase Auth sign-in before navigating so the request is not aborted
         const authEmail = matchedAdmin.email || `${matchedAdminKey}@supplify.local`;
         await signInWithEmailAndPassword(auth, authEmail, password).catch(() => {});
 
         showFeedback("Login successful! Redirecting...", false);
-        window.location.href = "menu.html";
+        window.location.replace(targetPage);
     } catch (error) {
         console.error("Access denied:", error.message || error);
-        showFeedback("Access denied. Only authorized Web Admin accounts can sign in.", true);
+        showFeedback("Access denied. Invalid admin username or password.", true);
         if (loginBtn) {
             loginBtn.disabled = false;
             loginBtn.textContent = "SIGN IN";

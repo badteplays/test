@@ -6,7 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Supplify Stationery Dispenser</title>
     <script>
-        window.location.replace("admin.html");
+        const hasSession = sessionStorage.getItem("supplify_admin_session") || localStorage.getItem("supplify_admin_session");
+        window.location.replace(hasSession ? "admin.html" : "login.html?redirect=admin.html");
     </script>
     <style>
         body {
@@ -38,8 +39,8 @@
 <body>
     <div class="redirect-box">
         <h1>Supplify Stationery Dispenser</h1>
-        <p>Redirecting to the admin dashboard...</p>
-        <p><a href="admin.html">Click here if you are not redirected automatically.</a></p>
+        <p>Redirecting to the admin login page...</p>
+        <p><a href="login.html?redirect=admin.html">Click here if you are not redirected automatically.</a></p>
     </div>
 </body>
 </html>
